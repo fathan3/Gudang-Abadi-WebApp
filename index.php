@@ -2,6 +2,12 @@
 // Start Session if needed for flash messages
 session_start();
 
+// Define BASE_URL dynamically to prevent CSS/JS missing when trailing slash is omitted
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http";
+$base_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+if ($base_dir === '/') $base_dir = '';
+define('BASE_URL', $protocol . "://" . $_SERVER['HTTP_HOST'] . $base_dir . "/");
+
 // Autoloader for MVC components
 spl_autoload_register(function ($class_name) {
     $dirs = [
