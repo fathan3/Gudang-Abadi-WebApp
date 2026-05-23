@@ -154,9 +154,9 @@ class RelasiModel {
                         WHEN MAX(p.tanggal) IS NULL THEN NULL
                         ELSE DATEDIFF(CURRENT_DATE, MAX(p.tanggal)) 
                     END as hari_sejak_pengiriman,
-                    ev.status_lanjut,
-                    ev.catatan as evaluasi_catatan,
-                    ev.tanggal as evaluasi_tanggal
+                    MAX(ev.status_lanjut) as status_lanjut,
+                    MAX(ev.catatan) as evaluasi_catatan,
+                    MAX(ev.tanggal) as evaluasi_tanggal
                 FROM relasi r
                 LEFT JOIN pengiriman p ON p.relasi_id = r.id
                 LEFT JOIN (
