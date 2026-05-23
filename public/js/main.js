@@ -1,46 +1,30 @@
-// Premium UI Scripting Layer
+// Premium UI Scripting Layer (Tailwind Adapted)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Theme Management (Light / Dark Mode)
+    // 1. Theme Management (Light / Dark Mode via Tailwind class)
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     const currentTheme = localStorage.getItem('theme') || 'light';
+    const htmlEl = document.documentElement;
     
     // Set initial theme
     if (currentTheme === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        updateThemeIcon(true);
+        htmlEl.classList.add('dark');
+        htmlEl.classList.remove('light');
     } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        updateThemeIcon(false);
+        htmlEl.classList.add('light');
+        htmlEl.classList.remove('dark');
     }
 
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', () => {
-            let theme = document.documentElement.getAttribute('data-theme');
-            if (theme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'light');
+            if (htmlEl.classList.contains('dark')) {
+                htmlEl.classList.replace('dark', 'light');
                 localStorage.setItem('theme', 'light');
-                updateThemeIcon(false);
             } else {
-                document.documentElement.setAttribute('data-theme', 'dark');
+                htmlEl.classList.replace('light', 'dark');
                 localStorage.setItem('theme', 'dark');
-                updateThemeIcon(true);
             }
         });
-    }
-
-    function updateThemeIcon(isDark) {
-        const darkIcon = document.getElementById('theme-icon-dark');
-        const lightIcon = document.getElementById('theme-icon-light');
-        if (darkIcon && lightIcon) {
-            if (isDark) {
-                darkIcon.style.display = 'none';
-                lightIcon.style.display = 'block';
-            } else {
-                darkIcon.style.display = 'block';
-                lightIcon.style.display = 'none';
-            }
-        }
     }
 
     // 2. Tab Control System
@@ -52,19 +36,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetTab = btn.getAttribute('data-tab');
             
             // Toggle buttons
-            tabButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            tabButtons.forEach(b => {
+                b.classList.remove('text-primary', 'border-primary', 'dark:text-primary');
+                b.classList.add('text-slate-500', 'border-transparent');
+            });
+            btn.classList.remove('text-slate-500', 'border-transparent');
+            btn.classList.add('text-primary', 'border-primary', 'dark:text-primary');
             
             // Toggle contents
             tabContents.forEach(content => {
                 if (content.id === targetTab) {
-                    content.classList.add('active');
+                    content.classList.remove('hidden');
                 } else {
-                    content.classList.remove('active');
+                    content.classList.add('hidden');
                 }
             });
             
-            // Preserve tab in URL query (optional helper)
+            // Preserve tab in URL query
             const url = new URL(window.location);
             url.searchParams.set('tab', targetTab);
             window.history.pushState({}, '', url);
@@ -75,14 +63,25 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.classList.add('active');
+            modal.classList.remove('hidden');
+            // small timeout to allow display:block to apply before animating opacity
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild?.classList.remove('scale-95');
+                modal.firstElementChild?.classList.add('scale-100');
+            }, 10);
         }
     }
 
     window.closeModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.classList.remove('active');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild?.classList.remove('scale-100');
+            modal.firstElementChild?.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
         }
     }
 
@@ -91,22 +90,20 @@ document.addEventListener('DOMContentLoaded', () => {
     overlays.forEach(overlay => {
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
-                overlay.classList.remove('active');
+                closeModal(overlay.id);
             }
         });
     });
 
     // 4. Alert Banner Auto-dismiss/Close
-    const alertCloseBtns = document.querySelectorAll('.alert-close');
+    // Covered inline in header.php for global messages, but handle any custom ones here:
+    const alertCloseBtns = document.querySelectorAll('.alert-close-btn');
     alertCloseBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            const banner = btn.closest('.alert-banner');
+            const banner = btn.closest('div[class*="badge-"]');
             if (banner) {
                 banner.style.opacity = '0';
-                banner.style.transform = 'translateY(-10px)';
-                setTimeout(() => {
-                    banner.remove();
-                }, 300);
+                setTimeout(() => banner.remove(), 300);
             }
         });
     });
@@ -118,13 +115,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (mobileMenuToggle && sidebar && mobileOverlay) {
         mobileMenuToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('active');
-            mobileOverlay.classList.toggle('active');
+            sidebar.classList.toggle('max-lg:-translate-x-full');
+            mobileOverlay.classList.toggle('hidden');
+            setTimeout(() => {
+                mobileOverlay.classList.toggle('opacity-0');
+            }, 10);
         });
 
         mobileOverlay.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-            mobileOverlay.classList.remove('active');
+            sidebar.classList.add('max-lg:-translate-x-full');
+            mobileOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                mobileOverlay.classList.add('hidden');
+            }, 300);
         });
     }
 });

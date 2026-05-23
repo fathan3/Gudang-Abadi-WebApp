@@ -1,14 +1,14 @@
 <?php require_once __DIR__ . '/../layout/header.php'; ?>
 
 <!-- Page Header -->
-<div class="page-header">
-    <div class="page-title">
-        <h2>Mitra &amp; Relasi Pelanggan</h2>
-        <p>Monitor stok tabung yang dipinjam oleh masing-masing mitra di setiap lokasi</p>
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+    <div>
+        <h2 class="text-2xl font-bold tracking-tight">Mitra &amp; Relasi Pelanggan</h2>
+        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Monitor stok tabung yang dipinjam oleh masing-masing mitra di setiap lokasi</p>
     </div>
-    <div class="page-actions">
-        <a href="index.php?controller=relasi&action=create" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:18px;height:18px;">
+    <div>
+        <a href="index.php?controller=relasi&action=create" class="btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Tambah Mitra Baru
@@ -17,40 +17,40 @@
 </div>
 
 <!-- Stock Matrix Table Card -->
-<div class="section-card">
-    <div class="section-title">
-        <h3>Matriks Saldo Tabung Relasi</h3>
-        <div style="font-size: 0.8rem; color: var(--text-muted);">
+<div class="glass-panel p-6 rounded-2xl shadow-sm">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+        <h3 class="text-lg font-bold">Matriks Saldo Tabung Relasi</h3>
+        <div class="text-xs text-slate-500 dark:text-gray-400 italic">
             *Angka menunjukkan jumlah tabung yang dipinjam (MP) di lokasi relasi
         </div>
     </div>
     
-    <div class="table-wrapper">
-        <table class="custom-table">
-            <thead>
+    <div class="overflow-x-auto border border-slate-200 dark:border-gray-700 rounded-xl">
+        <table class="w-full text-sm text-left whitespace-nowrap">
+            <thead class="bg-slate-50/50 dark:bg-gray-800/50 text-slate-500">
                 <tr>
-                    <th>Kode</th>
-                    <th>Nama Relasi</th>
-                    <th>Lokasi</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kode</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Nama Relasi</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Lokasi</th>
                     <?php foreach ($barangList as $b): ?>
-                        <th style="text-align: center;"><?= htmlspecialchars($b['nama_barang']) ?></th>
+                        <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center"><?= htmlspecialchars($b['nama_barang']) ?></th>
                     <?php endforeach; ?>
-                    <th style="text-align: center; width: 150px;">Aksi</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($clients)): ?>
                     <tr>
-                        <td colspan="<?= count($barangList) + 4 ?>" style="text-align:center; color:var(--text-muted); padding: 2rem;">
+                        <td colspan="<?= count($barangList) + 4 ?>" class="px-5 py-8 text-center text-slate-500">
                             Belum ada data relasi. Klik tombol di atas untuk menambah mitra baru.
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($clients as $c): ?>
-                        <tr>
-                            <td><span class="badge badge-info"><strong><?= htmlspecialchars($c['kode_relasi']) ?></strong></span></td>
-                            <td><strong><?= htmlspecialchars($c['nama_relasi']) ?></strong></td>
-                            <td><?= htmlspecialchars($c['lokasi'] ?: '-') ?></td>
+                        <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-colors">
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700"><span class="badge badge-info"><strong><?= htmlspecialchars($c['kode_relasi']) ?></strong></span></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold text-slate-800 dark:text-gray-200"><?= htmlspecialchars($c['nama_relasi']) ?></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($c['lokasi'] ?: '-') ?></td>
                             
                             <!-- Dynamic Cylinder Stock columns -->
                             <?php foreach ($barangList as $b): ?>
@@ -64,27 +64,27 @@
                                     }
                                 }
                                 ?>
-                                <td style="text-align: center; font-weight: 700; font-size: 1rem;">
+                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-base font-bold">
                                     <?php if ($stockVal > 0): ?>
-                                        <span style="color: var(--warning);"><?= $stockVal ?></span>
+                                        <span class="text-warning"><?= $stockVal ?></span>
                                     <?php elseif ($stockVal < 0): ?>
-                                        <span style="color: var(--danger);"><?= $stockVal ?></span>
+                                        <span class="text-danger"><?= $stockVal ?></span>
                                     <?php else: ?>
-                                        <span style="color: var(--text-muted); opacity: 0.5;">0</span>
+                                        <span class="text-slate-300 dark:text-slate-600">0</span>
                                     <?php endif; ?>
                                 </td>
                             <?php endforeach; ?>
                             
                             <!-- Action Links -->
-                            <td style="text-align: center;">
-                                <div style="display:flex; gap:0.5rem; justify-content:center;">
-                                    <a href="index.php?controller=relasi&action=detail&id=<?= $c['id'] ?>" class="btn btn-secondary btn-sm" title="Detail Profil &amp; History">
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="index.php?controller=relasi&action=detail&id=<?= $c['id'] ?>" class="btn-sm bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-gray-600 transition-colors inline-block no-underline" title="Detail Profil &amp; History">
                                         Detail
                                     </a>
-                                    <a href="index.php?controller=relasi&action=edit&id=<?= $c['id'] ?>" class="btn btn-secondary btn-sm" style="color:var(--primary);" title="Edit Mitra">
+                                    <a href="index.php?controller=relasi&action=edit&id=<?= $c['id'] ?>" class="btn-sm bg-indigo-50 text-primary dark:bg-indigo-500/20 hover:bg-indigo-100 transition-colors inline-block no-underline" title="Edit Mitra">
                                         Edit
                                     </a>
-                                    <a href="index.php?controller=relasi&action=delete&id=<?= $c['id'] ?>" class="btn btn-secondary btn-sm" style="color:var(--danger);" onclick="return confirm('Apakah Anda yakin ingin menghapus relasi <?= htmlspecialchars($c['nama_relasi']) ?>? Semua data transaksi dan stok terkait akan terhapus.');" title="Hapus">
+                                    <a href="index.php?controller=relasi&action=delete&id=<?= $c['id'] ?>" class="btn-sm bg-red-50 text-danger dark:bg-red-500/20 hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirm('Apakah Anda yakin ingin menghapus relasi <?= htmlspecialchars($c['nama_relasi']) ?>? Semua data transaksi dan stok terkait akan terhapus.');" title="Hapus">
                                         Hapus
                                     </a>
                                 </div>

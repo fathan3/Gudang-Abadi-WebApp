@@ -1,14 +1,14 @@
 <?php require_once __DIR__ . '/../layout/header.php'; ?>
 
 <!-- Page Header -->
-<div class="page-header">
-    <div class="page-title">
-        <h2>Catatan Pengiriman Harian</h2>
-        <p>Kelola pencatatan harian untuk pengiriman tabung isi ke klien dan pengembalian tabung kosong</p>
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+    <div>
+        <h2 class="text-2xl font-bold tracking-tight">Catatan Pengiriman Harian</h2>
+        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Kelola pencatatan harian untuk pengiriman tabung isi ke klien dan pengembalian tabung kosong</p>
     </div>
-    <div class="page-actions">
-        <a href="index.php?controller=pengiriman&action=create" class="btn btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width:18px;height:18px;">
+    <div>
+        <a href="index.php?controller=pengiriman&action=create" class="btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             Catat Pengiriman Baru
@@ -17,48 +17,48 @@
 </div>
 
 <!-- Deliveries List Card -->
-<div class="section-card">
-    <div class="section-title">
-        <h3>Jurnal Log Transaksi Pengiriman</h3>
+<div class="glass-panel p-6 rounded-2xl shadow-sm">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-lg font-bold">Jurnal Log Transaksi Pengiriman</h3>
     </div>
     
-    <div class="table-wrapper">
-        <table class="custom-table">
-            <thead>
+    <div class="overflow-x-auto border border-slate-200 dark:border-gray-700 rounded-xl">
+        <table class="w-full text-sm text-left whitespace-nowrap">
+            <thead class="bg-slate-50/50 dark:bg-gray-800/50 text-slate-500">
                 <tr>
-                    <th>Tanggal</th>
-                    <th>Kode Relasi</th>
-                    <th>Nama Relasi</th>
-                    <th>Jenis Tabung</th>
-                    <th>Kirim (Isi)</th>
-                    <th>Kembali (Kosong)</th>
-                    <th>Keterangan</th>
-                    <th style="text-align: center; width: 120px;">Aksi</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Tanggal</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kode Relasi</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Nama Relasi</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Jenis Tabung</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kirim (Isi)</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kembali (Kosong)</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Keterangan</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($deliveries)): ?>
                     <tr>
-                        <td colspan="8" style="text-align:center; color:var(--text-muted); padding: 2rem;">
+                        <td colspan="8" class="px-5 py-8 text-center text-slate-500">
                             Belum ada riwayat transaksi pengiriman. Klik tombol di atas untuk mencatat pengiriman.
                         </td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($deliveries as $d): ?>
-                        <tr>
-                            <td><?= date('d-m-Y', strtotime($d['tanggal'])) ?></td>
-                            <td><span class="badge badge-info"><strong><?= htmlspecialchars($d['kode_relasi']) ?></strong></span></td>
-                            <td><strong><?= htmlspecialchars($d['nama_relasi']) ?></strong></td>
-                            <td><?= htmlspecialchars($d['nama_barang']) ?></td>
-                            <td style="color:var(--success); font-weight:700;">+<?= $d['jumlah_masuk'] ?></td>
-                            <td style="color:var(--warning); font-weight:700;">-<?= $d['jumlah_keluar'] ?></td>
-                            <td><?= htmlspecialchars($d['keterangan'] ?: '-') ?></td>
-                            <td style="text-align: center;">
-                                <div style="display:flex; gap:0.5rem; justify-content:center;">
-                                    <a href="index.php?controller=pengiriman&action=edit&id=<?= $d['id'] ?>" class="btn btn-secondary btn-sm" style="color:var(--primary);" title="Edit Log">
+                        <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-colors">
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= date('d-m-Y', strtotime($d['tanggal'])) ?></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700"><span class="badge badge-info"><strong><?= htmlspecialchars($d['kode_relasi']) ?></strong></span></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['nama_relasi']) ?></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['nama_barang']) ?></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-success font-bold">+<?= $d['jumlah_masuk'] ?></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-warning font-bold">-<?= $d['jumlah_keluar'] ?></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['keterangan'] ?: '-') ?></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="index.php?controller=pengiriman&action=edit&id=<?= $d['id'] ?>" class="btn-sm bg-indigo-50 text-primary dark:bg-indigo-500/20 hover:bg-indigo-100 transition-colors inline-block no-underline" title="Edit Log">
                                         Edit
                                     </a>
-                                    <a href="index.php?controller=pengiriman&action=delete&id=<?= $d['id'] ?>" class="btn btn-secondary btn-sm" style="color:var(--danger);" onclick="return confirm('Apakah Anda yakin ingin menghapus catatan pengiriman ini? Stok di gudang dan relasi akan otomatis dihitung kembali.');" title="Hapus">
+                                    <a href="index.php?controller=pengiriman&action=delete&id=<?= $d['id'] ?>" class="btn-sm bg-red-50 text-danger dark:bg-red-500/20 hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirm('Apakah Anda yakin ingin menghapus catatan pengiriman ini? Stok di gudang dan relasi akan otomatis dihitung kembali.');" title="Hapus">
                                         Hapus
                                     </a>
                                 </div>
@@ -72,9 +72,9 @@
 
     <!-- Pagination -->
     <?php if ($totalPages > 1): ?>
-        <div style="display:flex; justify-content:center; gap:0.5rem; margin-top:2rem;">
+        <div class="flex justify-center gap-2 mt-8">
             <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <a href="index.php?controller=pengiriman&action=index&p=<?= $i ?>" class="btn btn-secondary btn-sm <?= $page == $i ? 'btn-primary' : '' ?>" style="padding:0.4rem 0.75rem;">
+                <a href="index.php?controller=pengiriman&action=index&p=<?= $i ?>" class="btn-sm <?= $page == $i ? 'btn-primary' : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' ?>">
                     <?= $i ?>
                 </a>
             <?php endfor; ?>

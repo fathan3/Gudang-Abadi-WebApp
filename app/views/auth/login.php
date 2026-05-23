@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,94 +8,103 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Main Style -->
-    <link rel="stylesheet" href="<?= BASE_URL ?>public/css/style.css?v=1.2">
-    <style>
-        body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, var(--bg-primary) 0%, rgba(99,102,241,0.05) 100%);
-            margin: 0;
-            padding: 1rem;
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#64748b',
+                        success: '#0d9488',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#0ea5e9'
+                    }
+                }
+            }
         }
-        .auth-card {
-            background: var(--bg-glass);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-premium);
-            padding: 2.5rem;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: var(--shadow-premium);
-        }
-        .auth-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .auth-header h1 {
-            font-size: 1.75rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--success));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-        .auth-header p {
-            color: var(--text-muted);
-            font-size: 0.9rem;
+    </script>
+    <style type="text/tailwindcss">
+        @layer components {
+            .glass-panel {
+                @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-white/20 dark:border-slate-700/50;
+            }
+            .form-label {
+                @apply block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2;
+            }
+            .form-control {
+                @apply w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-gray-100 placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all;
+            }
+            .btn-primary {
+                @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary hover:bg-indigo-600 text-white font-medium rounded-xl shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0;
+            }
         }
     </style>
 </head>
-<body data-theme="light">
+<body class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-50 to-indigo-50/50 dark:from-slate-900 dark:to-slate-800 text-slate-800 dark:text-slate-200 font-sans">
     
-    <div class="auth-card">
-        <div class="auth-header">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 48px; height: 48px; color: var(--primary); margin: 0 auto 1rem auto; filter: drop-shadow(0 0 8px var(--primary-glow));">
+    <div class="glass-panel w-full max-w-md p-10 rounded-3xl shadow-xl shadow-indigo-500/10 dark:shadow-none">
+        <div class="text-center mb-8">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-12 h-12 mx-auto mb-4 text-primary drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.283 8.283 0 013 6.3 8.284 8.284 0 003-6.3 8.287 8.287 0 002.962-2.386z" />
             </svg>
-            <h1>TabungFlow</h1>
-            <p>Silakan masuk ke akun Anda</p>
+            <h1 class="text-3xl font-extrabold bg-gradient-to-br from-primary to-cyan-500 bg-clip-text text-transparent font-display mb-2">TabungFlow</h1>
+            <p class="text-slate-500 dark:text-gray-400 text-sm">Silakan masuk ke akun Anda</p>
         </div>
 
         <?php if (isset($_GET['msg'])): ?>
             <?php if ($_GET['msg'] === 'success_register'): ?>
-                <div class="alert-banner" style="background: var(--success-bg); border-color: rgba(13, 148, 136, 0.2); color: var(--success); margin-bottom:1.5rem; padding:0.75rem;">
-                    <p style="font-size:0.85rem; text-align:center;">Pendaftaran berhasil! Silakan login.</p>
+                <div class="bg-success/10 border border-success/20 text-success p-3 rounded-xl mb-6 text-sm text-center font-medium">
+                    Pendaftaran berhasil! Silakan login.
                 </div>
             <?php elseif ($_GET['msg'] === 'success_logout'): ?>
-                <div class="alert-banner" style="background: var(--success-bg); border-color: rgba(13, 148, 136, 0.2); color: var(--success); margin-bottom:1.5rem; padding:0.75rem;">
-                    <p style="font-size:0.85rem; text-align:center;">Anda telah berhasil keluar.</p>
+                <div class="bg-success/10 border border-success/20 text-success p-3 rounded-xl mb-6 text-sm text-center font-medium">
+                    Anda telah berhasil keluar.
                 </div>
             <?php endif; ?>
         <?php endif; ?>
 
         <?php if (isset($error)): ?>
-            <div class="alert-banner" style="margin-bottom:1.5rem; padding:0.75rem;">
-                <p style="font-size:0.85rem; text-align:center;"><?= htmlspecialchars($error) ?></p>
+            <div class="bg-danger/10 border border-danger/20 text-danger p-3 rounded-xl mb-6 text-sm text-center font-medium">
+                <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
 
-        <form action="index.php?controller=auth&action=login" method="POST">
-            <div class="form-group">
+        <form action="index.php?controller=auth&action=login" method="POST" class="space-y-5">
+            <div>
                 <label class="form-label" for="username">Username</label>
                 <input type="text" id="username" name="username" class="form-control" required>
             </div>
-            <div class="form-group" style="margin-top:1rem;">
+            <div>
                 <label class="form-label" for="password">Password</label>
                 <input type="password" id="password" name="password" class="form-control" required>
             </div>
             
-            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 2rem; padding: 0.85rem;">
+            <button type="submit" class="btn-primary w-full py-3 mt-4 text-base">
                 Masuk / Login
             </button>
         </form>
         
-        <div style="text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted);">
-            Belum punya akun? <a href="index.php?controller=auth&action=register" style="color: var(--primary); text-decoration: none; font-weight: 600;">Daftar di sini</a>
+        <div class="text-center mt-8 text-sm text-slate-500 dark:text-gray-400">
+            Belum punya akun? <a href="index.php?controller=auth&action=register" class="text-primary font-semibold hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors">Daftar di sini</a>
         </div>
     </div>
 
+    <script>
+        // Check for saved theme preference, otherwise use system preference
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
 </body>
 </html>
