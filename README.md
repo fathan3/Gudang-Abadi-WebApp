@@ -56,6 +56,6 @@ Gudang-Abadijaya-WebApp
 ## 🤝 Kontributor
 Aplikasi ini dirancang dan dikembangkan dengan penuh kebanggaan oleh:
 - **Fatihul Umam**
-- **Fatan Ruhul Alam**
+- **Fathan Ruhul Alam**
 
 Terima kasih telah mengunjungi repository ini!
