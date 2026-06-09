@@ -30,11 +30,12 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="relasi_id">Mitra / Relasi</label>
-                <select id="relasi_id" name="relasi_id" class="form-control" required>
+                <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="relasi_id">Mitra / Relasi Pelanggan</label>
+                <select id="relasi_id" name="relasi_id" class="form-control choices-select" required>
+                    <option value="" disabled>-- Pilih Mitra --</option>
                     <?php foreach ($clients as $c): ?>
-                        <option value="<?= $c['id'] ?>" <?= $c['id'] == $pengiriman['relasi_id'] ? 'selected' : '' ?>>
-                            [<?= htmlspecialchars($c['kode_relasi']) ?>] <?= htmlspecialchars($c['nama_relasi']) ?>
+                        <option value="<?= $c['id'] ?>" <?= $pengiriman['relasi_id'] == $c['id'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($c['nama_relasi']) ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -44,7 +45,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div class="form-group md:col-span-1">
                 <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="barang_id">Jenis Tabung Gas</label>
-                <select id="barang_id" name="barang_id" class="form-control" required>
+                <select id="barang_id" name="barang_id" class="form-control choices-select" required>
                     <?php foreach ($barangList as $b): ?>
                         <option value="<?= $b['id'] ?>" <?= $b['id'] == $pengiriman['barang_id'] ? 'selected' : '' ?>>
                             <?= htmlspecialchars($b['nama_barang']) ?>

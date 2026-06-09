@@ -31,10 +31,10 @@
             
             <div class="form-group">
                 <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="relasi_id">Mitra / Relasi Pelanggan</label>
-                <select id="relasi_id" name="relasi_id" class="form-control" required>
+                <select id="relasi_id" name="relasi_id" class="form-control choices-select" required>
                     <option value="" disabled selected>-- Pilih Mitra --</option>
                     <?php foreach ($clients as $c): ?>
-                        <option value="<?= $c['id'] ?>">[<?= htmlspecialchars($c['kode_relasi']) ?>] <?= htmlspecialchars($c['nama_relasi']) ?></option>
+                        <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nama_relasi']) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -43,7 +43,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
             <div class="form-group md:col-span-1">
                 <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="barang_id">Jenis Tabung Gas</label>
-                <select id="barang_id" name="barang_id" class="form-control" required>
+                <select id="barang_id" name="barang_id" class="form-control choices-select" required>
                     <option value="" disabled selected>-- Pilih Jenis Tabung --</option>
                     <?php foreach ($barangList as $b): ?>
                         <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['nama_barang']) ?></option>

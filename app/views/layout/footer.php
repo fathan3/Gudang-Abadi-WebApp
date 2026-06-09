@@ -19,6 +19,26 @@
         </div>
     </div>
 
+    <!-- Choices.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const selects = document.querySelectorAll('.choices-select');
+            selects.forEach(function(select) {
+                new Choices(select, {
+                    searchEnabled: true,
+                    itemSelectText: '',
+                    shouldSort: false,
+                    placeholder: true,
+                    placeholderValue: select.options[0].text,
+                    searchPlaceholderValue: 'Ketik untuk mencari...',
+                    noResultsText: 'Tidak ada hasil yang ditemukan',
+                    noChoicesText: 'Tidak ada pilihan untuk dipilih',
+                });
+            });
+        });
+    </script>
+
     <!-- Main Script -->
     <script src="<?= BASE_URL ?>public/js/main.js?v=1.2"></script>
 </body>

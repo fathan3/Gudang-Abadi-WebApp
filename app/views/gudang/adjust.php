@@ -31,7 +31,7 @@
             
             <div class="form-group">
                 <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="barang_id">Jenis Tabung Gas</label>
-                <select id="barang_id" name="barang_id" class="form-control" required>
+                <select id="barang_id" name="barang_id" class="form-control choices-select" required>
                     <option value="" disabled selected>-- Pilih Jenis Tabung --</option>
                     <?php foreach ($barangList as $b): ?>
                         <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['nama_barang']) ?></option>

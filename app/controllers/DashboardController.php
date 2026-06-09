@@ -25,6 +25,19 @@ class DashboardController {
         $totalClients = count($clients);
         $totalCylinderTypes = count($warehouseStocks);
         
+        $totalTabungMitra = 0;
+        $tabungMitraDetail = [];
+        foreach ($clients as $client) {
+            foreach ($client['stocks'] as $stock) {
+                $totalTabungMitra += $stock['stok_akhir'];
+                $nama_barang = $stock['nama_barang'];
+                if (!isset($tabungMitraDetail[$nama_barang])) {
+                    $tabungMitraDetail[$nama_barang] = 0;
+                }
+                $tabungMitraDetail[$nama_barang] += $stock['stok_akhir'];
+            }
+        }
+        
         // Fetch latest deliveries for dashboard summary (last 5)
         $pengirimanModel = new PengirimanModel();
         $recentDeliveries = $pengirimanModel->getAll(5, 0);

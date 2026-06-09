@@ -24,6 +24,9 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+    <!-- Choices.js for searchable selects -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+
     <!-- Tailwind CSS (Play CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -89,6 +92,39 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
             .badge-warning { @apply bg-warning-bg text-warning border border-warning/20; }
             .badge-danger { @apply bg-danger-bg text-danger border border-danger/20; }
             .badge-info { @apply bg-indigo-50 dark:bg-indigo-500/10 text-primary border border-primary/20; }
+            
+            /* Choices.js Custom Overrides for Theme */
+            .choices { @apply mb-0; }
+            .choices__inner {
+                @apply w-full px-4 py-[10px] rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-900 dark:text-gray-100 text-sm transition-all shadow-none flex items-center min-h-[46px];
+            }
+            .is-focused .choices__inner, .is-open .choices__inner {
+                @apply border-primary ring-4 ring-primary/10 border-slate-200 dark:border-gray-700;
+            }
+            .choices[data-type*="select-one"]::after {
+                @apply border-slate-400 dark:border-gray-500 mt-[-2.5px];
+            }
+            .choices[data-type*="select-one"].is-open::after {
+                @apply mt-[-2.5px] border-slate-400 dark:border-gray-500;
+            }
+            .choices__list--dropdown, .choices__list[aria-expanded] {
+                @apply bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl mt-2 shadow-lg z-50 text-slate-900 dark:text-gray-100;
+            }
+            .choices__list--dropdown .choices__item--selectable.is-highlighted, .choices__list[aria-expanded] .choices__item--selectable.is-highlighted {
+                @apply bg-indigo-50 dark:bg-indigo-500/20 text-primary dark:text-indigo-300;
+            }
+            .choices__list--dropdown .choices__item, .choices__list[aria-expanded] .choices__item {
+                @apply px-4 py-2 text-sm;
+            }
+            .choices__input {
+                @apply bg-transparent text-slate-900 dark:text-gray-100 border-none outline-none mb-0 w-full;
+            }
+            .choices__input::placeholder {
+                @apply text-slate-400 dark:text-gray-500;
+            }
+            .choices__list--single {
+                @apply p-0;
+            }
         }
     </style>
 </head>
@@ -102,7 +138,7 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
             <div class="flex items-center gap-3 mb-12">
                 <!-- Gas Cylinder Logo Icon -->
                 <i class="ph ph-cylinder text-primary drop-shadow-[0_0_8px_rgba(79,70,229,0.15)] text-[32px]"></i>
-                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-success bg-clip-text text-transparent">TabungFlow</h1>
+                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-br from-primary to-success bg-clip-text text-transparent">AbadiGas</h1>
             </div>
             
             <nav class="flex-grow">
