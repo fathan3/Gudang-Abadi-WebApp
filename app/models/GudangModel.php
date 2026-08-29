@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/AuditLogModel.php';
 
 class GudangModel {
     private $db;
@@ -48,9 +49,10 @@ class GudangModel {
             elseif ($p['kondisi_kembali'] == 'Kosong') $stockMap[$b_id]['stok_kosong'] -= $p['jumlah_keluar'];
         }
 
+        
         // 3. Reverse 'gudang_transaksi' that occurred AFTER the date
-        // Since we don't know the exact target_stok for some, we make best-effort assumptions based on standard use
-        $stmt_gt = $this->db->prepare("SELECT barang_id, tipe_transaksi, jumlah, keterangan FROM gudang_transaksi WHERE tanggal > ?");
+        // Gunakan kolom kondisi_stok yang baru untuk kalkulasi yang lebih akurat
+        $stmt_gt = $this->db->prepare("SELECT barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok FROM gudang_transaksi WHERE tanggal > ?");
         $stmt_gt->execute([$date]);
         $gts = $stmt_gt->fetchAll();
 
@@ -59,18 +61,27 @@ class GudangModel {
             if (!isset($stockMap[$b_id])) continue;
 
             $qty = (int)$gt['jumlah'];
+            $kondisi = isset($gt['kondisi_stok']) && $gt['kondisi_stok'] ? $gt['kondisi_stok'] : 'ready';
+
             if ($gt['tipe_transaksi'] == 'refill') {
+                // Refill: decreases empty stock, increases full stock (in original action)
+                // Reverse: decreases full stock, increases empty stock
                 $stockMap[$b_id]['stok_ready'] -= $qty;
                 $stockMap[$b_id]['stok_kosong'] += $qty;
             } elseif ($gt['tipe_transaksi'] == 'beli_baru') {
-                // assume ready
-                $stockMap[$b_id]['stok_ready'] -= $qty;
+                if ($kondisi === 'kosong') {
+                    $stockMap[$b_id]['stok_kosong'] -= $qty;
+                } else {
+                    $stockMap[$b_id]['stok_ready'] -= $qty;
+                }
             } elseif ($gt['tipe_transaksi'] == 'jual_rusak') {
-                // assume ready
-                $stockMap[$b_id]['stok_ready'] += $qty;
+                if ($kondisi === 'kosong') {
+                    $stockMap[$b_id]['stok_kosong'] += $qty;
+                } else {
+                    $stockMap[$b_id]['stok_ready'] += $qty;
+                }
             } elseif ($gt['tipe_transaksi'] == 'koreksi') {
-                // assume ready unless it's a transfer from kosong
-                if (stripos($gt['keterangan'], 'kosong') !== false) {
+                if ($kondisi === 'kosong') {
                     $stockMap[$b_id]['stok_kosong'] -= $qty;
                 } else {
                     $stockMap[$b_id]['stok_ready'] -= $qty;
@@ -101,10 +112,10 @@ class GudangModel {
             
             // Insert log
             $stmt = $this->db->prepare(
-                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) 
-                 VALUES (?, ?, ?, ?, ?)"
+                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok) 
+                 VALUES (?, ?, ?, ?, ?, ?)"
             );
-            $stmt->execute([$tanggal, $barang_id, $tipe_transaksi, $jumlah, $keterangan]);
+            $stmt->execute([$tanggal, $barang_id, $tipe_transaksi, $jumlah, $keterangan, $target_stok]);
             
             // Update stok_gudang based on action
             if ($tipe_transaksi === 'refill') {
@@ -143,6 +154,9 @@ class GudangModel {
             }
             
             $this->db->commit();
+            
+            AuditLogModel::log('Penyesuaian Stok', "Tipe: {$tipe_transaksi}, Jumlah: {$jumlah}", $tanggal);
+            
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -183,23 +197,92 @@ class GudangModel {
             // 3. Log transaction
             // Log as 'koreksi' (transfer_out) for origin
             $stmt_log_out = $this->db->prepare(
-                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) 
-                 VALUES (?, ?, 'koreksi', ?, ?)"
+                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok) 
+                 VALUES (?, ?, 'koreksi', ?, ?, ?)"
             );
             $ket_out = "Transfer Keluar: " . $keterangan;
-            $stmt_log_out->execute([$tanggal, $barang_asal_id, -$jumlah, $ket_out]);
+            $stmt_log_out->execute([$tanggal, $barang_asal_id, -$jumlah, $ket_out, $kondisi_asal]);
             
             // Log as 'koreksi' (transfer_in) for destination
             if ($barang_asal_id != $barang_tujuan_id || $kondisi_asal != $kondisi_tujuan) {
                 $stmt_log_in = $this->db->prepare(
-                    "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) 
-                     VALUES (?, ?, 'koreksi', ?, ?)"
+                    "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok) 
+                     VALUES (?, ?, 'koreksi', ?, ?, ?)"
                 );
                 $ket_in = "Transfer Masuk: " . $keterangan;
-                $stmt_log_in->execute([$tanggal, $barang_tujuan_id, $jumlah, $ket_in]);
+                $stmt_log_in->execute([$tanggal, $barang_tujuan_id, $jumlah, $ket_in, $kondisi_tujuan]);
             }
             
             $this->db->commit();
+            
+            AuditLogModel::log('Transfer Stok', "Jumlah: {$jumlah}", $tanggal);
+            
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function getTransactionById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM gudang_transaksi WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function deleteTransaction($id) {
+        try {
+            $this->db->beginTransaction();
+            
+            $gt = $this->getTransactionById($id);
+            if (!$gt) throw new Exception("Transaksi tidak ditemukan.");
+            
+            $qty = (int)$gt['jumlah'];
+            $b_id = $gt['barang_id'];
+            $kondisi = $gt['kondisi_stok'] ?? 'ready';
+            
+            // Reverse stock
+            if ($gt['tipe_transaksi'] == 'refill') {
+                $stmt = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready - ?, stok_kosong = stok_kosong + ? WHERE barang_id = ?");
+                $stmt->execute([$qty, $qty, $b_id]);
+            } elseif ($gt['tipe_transaksi'] == 'beli_baru') {
+                $col = $kondisi === 'kosong' ? 'stok_kosong' : 'stok_ready';
+                $stmt = $this->db->prepare("UPDATE stok_gudang SET {$col} = {$col} - ? WHERE barang_id = ?");
+                $stmt->execute([$qty, $b_id]);
+            } elseif ($gt['tipe_transaksi'] == 'jual_rusak') {
+                $col = $kondisi === 'kosong' ? 'stok_kosong' : 'stok_ready';
+                $stmt = $this->db->prepare("UPDATE stok_gudang SET {$col} = {$col} + ? WHERE barang_id = ?");
+                $stmt->execute([$qty, $b_id]);
+            } elseif ($gt['tipe_transaksi'] == 'koreksi') {
+                $col = $kondisi === 'kosong' ? 'stok_kosong' : 'stok_ready';
+                $stmt = $this->db->prepare("UPDATE stok_gudang SET {$col} = {$col} - ? WHERE barang_id = ?");
+                $stmt->execute([$qty, $b_id]);
+            }
+            
+            $stmt = $this->db->prepare("DELETE FROM gudang_transaksi WHERE id = ?");
+            $stmt->execute([$id]);
+            
+            $this->db->commit();
+            
+            AuditLogModel::log('Hapus Transaksi Gudang', "Tipe: {$gt['tipe_transaksi']}, Jumlah: {$qty}", $gt['tanggal']);
+            return true;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function updateTransaction($id, $tanggal, $keterangan) {
+        try {
+            $this->db->beginTransaction();
+            $gt = $this->getTransactionById($id);
+            if (!$gt) throw new Exception("Transaksi tidak ditemukan.");
+            
+            $stmt = $this->db->prepare("UPDATE gudang_transaksi SET tanggal = ?, keterangan = ? WHERE id = ?");
+            $stmt->execute([$tanggal, $keterangan, $id]);
+            
+            $this->db->commit();
+            AuditLogModel::log('Edit Transaksi Gudang', "Tanggal/Keterangan diubah", $tanggal);
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
