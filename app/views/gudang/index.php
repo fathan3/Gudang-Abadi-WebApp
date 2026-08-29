@@ -129,12 +129,13 @@
                         <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Jenis Transaksi</th>
                         <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Perubahan</th>
                         <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Keterangan</th>
+                        <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($transactions)): ?>
                         <tr>
-                            <td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada riwayat transaksi gudang.</td>
+                            <td colspan="6" class="px-5 py-8 text-center text-slate-500">Belum ada riwayat transaksi gudang.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($transactions as $t): ?>
@@ -162,6 +163,12 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($t['keterangan'] ?: '-') ?></td>
+                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="<?= BASE_URL ?>gudang/edit_transaksi?id=<?= $t['id'] ?>" class="btn-sm bg-indigo-50 text-primary hover:bg-indigo-100 transition-colors inline-block no-underline">Edit</a>
+                                        <a href="<?= BASE_URL ?>gudang/delete_transaksi?id=<?= $t['id'] ?>" class="btn-sm bg-red-50 text-danger hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirm('Hapus transaksi gudang ini?');">Hapus</a>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>

@@ -30,6 +30,7 @@ class RelasiController {
 
         $filename = "Stok_Relasi_" . date('Y-m-d') . ".xls";
 
+        ob_clean();
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 
@@ -60,10 +61,17 @@ class RelasiController {
             $total_semua = 0;
             foreach ($barangList as $b) {
                 $b_id = $b['id'];
-                $stok_awal = isset($c['stok_awal'][$b_id]) ? $c['stok_awal'][$b_id] : 0;
-                $masuk = isset($c['masuk'][$b_id]) ? $c['masuk'][$b_id] : 0;
-                $keluar = isset($c['keluar'][$b_id]) ? $c['keluar'][$b_id] : 0;
-                $sisa = $stok_awal + $masuk - $keluar;
+                $sisa = 0;
+                
+                if (isset($c['stocks']) && is_array($c['stocks'])) {
+                    foreach ($c['stocks'] as $st) {
+                        if ($st['barang_id'] == $b_id) {
+                            $sisa = $st['stok_akhir'];
+                            break;
+                        }
+                    }
+                }
+                
                 $total_semua += $sisa;
                 
                 echo '<td style="text-align: right;">' . $sisa . '</td>';
@@ -299,6 +307,7 @@ class RelasiController {
 
         $filename = "Laporan_Stok_Mitra_" . preg_replace('/[^A-Za-z0-9_\-]/', '_', $relasi['nama_relasi']) . "_" . date('Y-m-d') . ".xls";
 
+        ob_clean();
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 

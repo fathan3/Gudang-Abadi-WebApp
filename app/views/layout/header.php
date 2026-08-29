@@ -179,7 +179,9 @@ $activeController = !empty($urlParts[0]) ? $urlParts[0] : 'dashboard';
                         ['id' => 'pengiriman', 'label' => 'Log Pengiriman', 'url' => BASE_URL . 'pengiriman', 'icon' => 'ph-truck'],
                         ['id' => 'relasi', 'label' => 'Stok Relasi / Mitra', 'url' => BASE_URL . 'relasi', 'icon' => 'ph-users-three'],
                         ['id' => 'gudang', 'label' => 'Stok Gudang', 'url' => BASE_URL . 'gudang', 'icon' => 'ph-warehouse'],
-                        ['id' => 'evaluasi', 'label' => 'Evaluasi Repurchase', 'url' => BASE_URL . 'evaluasi', 'icon' => 'ph-chart-bar']
+                        ['id' => 'evaluasi', 'label' => 'Evaluasi Repurchase', 'url' => BASE_URL . 'evaluasi', 'icon' => 'ph-chart-bar'],
+                        ['id' => 'audit', 'label' => 'Audit Log', 'url' => BASE_URL . 'audit', 'icon' => 'ph-clock-counter-clockwise'],
+                        ['id' => 'settings', 'label' => 'Pengaturan', 'url' => BASE_URL . 'settings/lock_date', 'icon' => 'ph-lock']
                     ];
                     
                     foreach ($menuItems as $item):
