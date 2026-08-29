@@ -40,6 +40,7 @@ class GudangController {
             $filename = "Stok_Gudang_Saat_Ini_" . date('Y-m-d') . ".xls";
         }
 
+        ob_clean();
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 
@@ -74,6 +75,7 @@ class GudangController {
 
         $filename = "Jurnal_Transaksi_Gudang_" . date('Y-m-d') . ".xls";
 
+        ob_clean();
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 
@@ -120,6 +122,13 @@ class GudangController {
             $target_stok = isset($_POST['target_stok']) ? $_POST['target_stok'] : 'ready';
             $keterangan = trim($_POST['keterangan']);
 
+            require_once __DIR__ . '/../models/SettingsModel.php';
+            $settingsModel = new SettingsModel();
+            $lock_date = $settingsModel->getLockDate();
+            if ($lock_date && $tanggal <= $lock_date) {
+                $error = "Gagal: Transaksi ditolak karena tanggal berada pada periode terkunci (" . date('d/m/Y', strtotime($lock_date)) . ").";
+            }
+
             $gudangModel = new GudangModel();
             
             // Validasi Refill
@@ -161,14 +170,23 @@ class GudangController {
             $jumlah = (int)$_POST['jumlah'];
             $keterangan = trim($_POST['keterangan']);
 
+            require_once __DIR__ . '/../models/SettingsModel.php';
+            $settingsModel = new SettingsModel();
+            $lock_date = $settingsModel->getLockDate();
+            if ($lock_date && $tanggal <= $lock_date) {
+                $error = "Gagal: Transaksi ditolak karena tanggal berada pada periode terkunci.";
+            }
+
             $gudangModel = new GudangModel();
             
-            try {
-                $gudangModel->transferStock($tanggal, $barang_asal_id, $kondisi_asal, $barang_tujuan_id, $kondisi_tujuan, $jumlah, $keterangan);
-                header("Location: " . BASE_URL . "gudang?msg=success_transfer");
-                exit;
-            } catch (Exception $e) {
-                $error = "Gagal memproses transfer: " . $e->getMessage();
+            if (!isset($error)) {
+                try {
+                    $gudangModel->transferStock($tanggal, $barang_asal_id, $kondisi_asal, $barang_tujuan_id, $kondisi_tujuan, $jumlah, $keterangan);
+                    header("Location: " . BASE_URL . "gudang?msg=success_transfer");
+                    exit;
+                } catch (Exception $e) {
+                    $error = "Gagal memproses transfer: " . $e->getMessage();
+                }
             }
         }
 
@@ -226,6 +244,74 @@ class GudangController {
             $barangModel->delete($id);
         }
         header("Location: " . BASE_URL . "gudang?tab=cylinders&msg=success_cylinder_delete");
+        exit;
+    }
+
+    public function edit_transaksi() {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $gudangModel = new GudangModel();
+        
+        $transaksi = $gudangModel->getTransactionById($id);
+        if (!$transaksi) {
+            header("Location: " . BASE_URL . "gudang?tab=transactions");
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $tanggal = $_POST['tanggal'];
+            $keterangan = trim($_POST['keterangan']);
+
+            require_once __DIR__ . '/../models/SettingsModel.php';
+            $settingsModel = new SettingsModel();
+            $lock_date = $settingsModel->getLockDate();
+            if ($lock_date) {
+                if ($tanggal <= $lock_date) {
+                    $error = "Gagal: Transaksi ditolak karena tanggal baru berada pada periode terkunci.";
+                } elseif ($transaksi['tanggal'] <= $lock_date) {
+                    $error = "Gagal: Transaksi lama tidak bisa diubah karena berada pada periode terkunci.";
+                }
+            }
+
+            if (!isset($error)) {
+                try {
+                    $gudangModel->updateTransaction($id, $tanggal, $keterangan);
+                    header("Location: " . BASE_URL . "gudang?tab=transactions&msg=success_update");
+                    exit;
+                } catch (Exception $e) {
+                    $error = "Gagal memperbarui transaksi: " . $e->getMessage();
+                }
+            }
+        }
+
+        require_once __DIR__ . '/../views/gudang/edit_transaksi.php';
+    }
+
+    public function delete_transaksi() {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $gudangModel = new GudangModel();
+        
+        if ($id > 0) {
+            $transaksi = $gudangModel->getTransactionById($id);
+            if ($transaksi) {
+                require_once __DIR__ . '/../models/SettingsModel.php';
+                $settingsModel = new SettingsModel();
+                $lock_date = $settingsModel->getLockDate();
+                if ($lock_date && $transaksi['tanggal'] <= $lock_date) {
+                    header("Location: " . BASE_URL . "gudang?tab=transactions&msg=error_lock_date");
+                    exit;
+                }
+            }
+            
+            try {
+                $gudangModel->deleteTransaction($id);
+                header("Location: " . BASE_URL . "gudang?tab=transactions&msg=success_delete");
+                exit;
+            } catch (Exception $e) {
+                header("Location: " . BASE_URL . "gudang?tab=transactions&msg=error_delete");
+                exit;
+            }
+        }
+        header("Location: " . BASE_URL . "gudang?tab=transactions");
         exit;
     }
 }

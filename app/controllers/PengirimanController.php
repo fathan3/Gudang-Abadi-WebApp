@@ -61,6 +61,7 @@ class PengirimanController {
         $filename = "Log_Pengiriman_" . date('Y-m-d') . ".xls";
 
         // Headers for Excel download
+        ob_clean();
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
 
@@ -115,6 +116,13 @@ class PengirimanController {
             $kondisi_kirims = $_POST['kondisi_kirim'] ?? [];
             $jumlah_keluars = $_POST['jumlah_keluar'] ?? [];
             $kondisi_kembalis = $_POST['kondisi_kembali'] ?? [];
+
+            require_once __DIR__ . '/../models/SettingsModel.php';
+            $settingsModel = new SettingsModel();
+            $lock_date = $settingsModel->getLockDate();
+            if ($lock_date && $tanggal <= $lock_date) {
+                $error = "Gagal: Transaksi ditolak karena tanggal berada pada periode terkunci (" . date('d/m/Y', strtotime($lock_date)) . ").";
+            }
 
             $db = (new Database())->getConnection();
             $pengirimanModel = new PengirimanModel();
@@ -264,6 +272,17 @@ class PengirimanController {
             $kondisi_kembali = trim($_POST['kondisi_kembali'] ?? 'Kosong');
             $keterangan = trim($_POST['keterangan']);
 
+            require_once __DIR__ . '/../models/SettingsModel.php';
+            $settingsModel = new SettingsModel();
+            $lock_date = $settingsModel->getLockDate();
+            if ($lock_date) {
+                if ($tanggal <= $lock_date) {
+                    $error = "Gagal: Transaksi ditolak karena tanggal baru berada pada periode terkunci.";
+                } elseif ($pengiriman['tanggal'] <= $lock_date) {
+                    $error = "Gagal: Transaksi lama tidak bisa diubah karena berada pada periode terkunci.";
+                }
+            }
+
             // Validate no_surat_jalan if changed
             if (!empty($no_surat_jalan) && $no_surat_jalan !== $pengiriman['no_surat_jalan']) {
                 if ($pengirimanModel->checkSuratJalanExists($no_surat_jalan)) {
@@ -358,6 +377,17 @@ class PengirimanController {
         $pengirimanModel = new PengirimanModel();
         
         if ($id > 0) {
+            $pengiriman = $pengirimanModel->getById($id);
+            if ($pengiriman) {
+                require_once __DIR__ . '/../models/SettingsModel.php';
+                $settingsModel = new SettingsModel();
+                $lock_date = $settingsModel->getLockDate();
+                if ($lock_date && $pengiriman['tanggal'] <= $lock_date) {
+                    header("Location: " . BASE_URL . "pengiriman?msg=error_lock_date");
+                    exit;
+                }
+            }
+
             try {
                 $pengirimanModel->delete($id);
                 header("Location: " . BASE_URL . "pengiriman?msg=success_delete");
