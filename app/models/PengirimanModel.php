@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/AuditLogModel.php';
 
 class PengirimanModel {
     private $db;
@@ -155,6 +156,9 @@ class PengirimanModel {
             if (!$inTransaction) {
                 $this->db->commit();
             }
+            
+            AuditLogModel::log('Surat Jalan dibuat', "Surat Jalan: {$no_surat_jalan}", $tanggal);
+            
             return true;
         } catch (Exception $e) {
             if (!$inTransaction) {
@@ -234,6 +238,9 @@ class PengirimanModel {
             $stmt->execute([$tanggal, $no_surat_jalan, $relasi_id, $barang_id, $jumlah_masuk, $kondisi_kirim, $jumlah_keluar, $kondisi_kembali, $keterangan, $id]);
             
             $this->db->commit();
+            
+            AuditLogModel::log('Surat Jalan diubah', "Surat Jalan: {$no_surat_jalan}", $tanggal);
+            
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
@@ -274,6 +281,9 @@ class PengirimanModel {
             $stmt->execute([$id]);
             
             $this->db->commit();
+            
+            AuditLogModel::log('Surat Jalan dihapus', "Data dihapus", $orig['tanggal']);
+            
             return true;
         } catch (Exception $e) {
             $this->db->rollBack();
