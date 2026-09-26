@@ -86,8 +86,24 @@ $exportUrl = BASE_URL . 'pengiriman/export' . ($filterQuery ? '?' . ltrim($filte
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['no_surat_jalan'] ?? '-') ?></td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['nama_relasi']) ?></td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['nama_barang']) ?></td>
-                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-success font-bold">+<?= $d['jumlah_masuk'] ?> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kirim']) ?>)</span></td>
-                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-warning font-bold">-<?= $d['jumlah_keluar'] ?> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kembali']) ?>)</span></td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold">
+                                <?php if ($d['jumlah_masuk'] > 0): ?>
+                                    <span class="text-success">+<?= $d['jumlah_masuk'] ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kirim']) ?>)</span>
+                                <?php elseif ($d['jumlah_masuk'] < 0): ?>
+                                    <span class="text-warning"><?= $d['jumlah_masuk'] ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kirim']) ?>)</span>
+                                <?php else: ?>
+                                    <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold">
+                                <?php if ($d['jumlah_keluar'] > 0): ?>
+                                    <span class="text-warning">-<?= $d['jumlah_keluar'] ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kembali']) ?>)</span>
+                                <?php elseif ($d['jumlah_keluar'] < 0): ?>
+                                    <span class="text-success"><?= abs($d['jumlah_keluar']) ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kembali']) ?>)</span>
+                                <?php else: ?>
+                                    <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
+                                <?php endif; ?>
+                            </td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['keterangan'] ?: '-') ?></td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
                                 <div class="flex items-center justify-center gap-2">

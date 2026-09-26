@@ -7,7 +7,10 @@
         <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Monitor stok tabung yang dipinjam oleh masing-masing mitra di setiap lokasi</p>
     </div>
 <?php
-$exportUrl = BASE_URL . 'relasi/export' . (!empty($_GET['search']) ? '?search=' . urlencode($_GET['search']) : '');
+$exportParams = [];
+if (!empty($_GET['search'])) $exportParams['search'] = $_GET['search'];
+if (!empty($_GET['date'])) $exportParams['date'] = $_GET['date'];
+$exportUrl = BASE_URL . 'relasi/export' . (!empty($exportParams) ? '?' . http_build_query($exportParams) : '');
 ?>
     <div class="flex items-center gap-3">
         <a href="<?= $exportUrl ?>" class="btn-secondary !text-success border border-success/20 hover:!bg-success/10" target="_blank">
@@ -23,18 +26,33 @@ $exportUrl = BASE_URL . 'relasi/export' . (!empty($_GET['search']) ? '?search=' 
 
 <!-- Stock Matrix Table Card -->
 <div class="glass-panel p-6 rounded-2xl shadow-sm">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
-            <h3 class="text-lg font-bold">Matriks Saldo Tabung Relasi</h3>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100">
+                <?= !empty($_GET['date']) ? 'Stok Relasi per Tanggal: ' . date('d-m-Y', strtotime($_GET['date'])) : 'Matriks Saldo Tabung Relasi' ?>
+            </h3>
             <div class="text-xs text-slate-500 dark:text-gray-400 italic mt-1">
-                *Angka menunjukkan jumlah tabung yang dipinjam (MP) di lokasi relasi
+                <?php if (!empty($_GET['date'])): ?>
+                    <span class="text-warning font-semibold">*Mode Histori: Menampilkan proyeksi saldo stok mitra pada akhir hari tersebut.</span>
+                <?php else: ?>
+                    *Angka menunjukkan jumlah tabung yang dipinjam (MP) di lokasi relasi
+                <?php endif; ?>
             </div>
         </div>
-        <form method="GET" action="<?= BASE_URL ?>relasi" class="relative w-full sm:w-72" id="searchForm">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="ph-bold ph-magnifying-glass text-slate-400 dark:text-slate-500"></i>
+        <form method="GET" action="<?= BASE_URL ?>relasi" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto" id="searchForm">
+            <div class="relative w-full sm:w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ph-bold ph-magnifying-glass text-slate-400 dark:text-slate-500"></i>
+                </div>
+                <input type="text" name="search" id="searchMitra" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" class="w-full pl-10 py-2 text-sm bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 focus:border-primary dark:focus:border-primary focus:outline-none ring-0 ring-transparent focus:ring-4 focus:ring-primary/10 dark:focus:ring-primary/20 rounded-xl text-slate-800 dark:text-gray-100 placeholder-slate-400 dark:placeholder-gray-500 transition-colors duration-200 shadow-sm" placeholder="Cari nama mitra...">
             </div>
-            <input type="text" name="search" id="searchMitra" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" class="w-full pl-10 py-2.5 text-sm bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 focus:border-primary dark:focus:border-primary focus:outline-none ring-0 ring-transparent focus:ring-4 focus:ring-primary/10 dark:focus:ring-primary/20 rounded-xl text-slate-800 dark:text-gray-100 placeholder-slate-400 dark:placeholder-gray-500 transition-colors duration-200 shadow-sm" placeholder="Cari nama mitra...">
+            <div class="flex items-center gap-2">
+                <input type="date" name="date" value="<?= htmlspecialchars($_GET['date'] ?? '') ?>" class="form-control py-2 text-sm w-[150px]" title="Pilih Tanggal Stok">
+                <button type="submit" class="btn-primary py-2 px-4 text-sm whitespace-nowrap">Cek Histori</button>
+                <?php if (!empty($_GET['date']) || !empty($_GET['search'])): ?>
+                    <a href="<?= BASE_URL ?>relasi" class="btn-secondary py-2 px-4 text-sm whitespace-nowrap">Reset</a>
+                <?php endif; ?>
+            </div>
         </form>
     </div>
     <?php 
@@ -105,11 +123,11 @@ $exportUrl = BASE_URL . 'relasi/export' . (!empty($_GET['search']) ? '?search=' 
                                 ?>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-base font-bold">
                                     <?php if ($stockVal > 0): ?>
-                                        <span class="text-warning"><?= $stockVal ?></span>
+                                        <span class="text-success"><?= $stockVal ?></span>
                                     <?php elseif ($stockVal < 0): ?>
-                                        <span class="text-danger"><?= $stockVal ?></span>
+                                        <span class="text-warning"><?= $stockVal ?></span>
                                     <?php else: ?>
-                                        <span class="text-slate-300 dark:text-slate-600">0</span>
+                                        <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
                                     <?php endif; ?>
                                 </td>
                             <?php endforeach; ?>
@@ -138,7 +156,12 @@ $exportUrl = BASE_URL . 'relasi/export' . (!empty($_GET['search']) ? '?search=' 
     <!-- Pagination -->
     <?php if (isset($totalPages) && $totalPages > 1): ?>
         <div class="flex justify-center items-center gap-1 mt-8">
-            <?php $searchParam = isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>
+            <?php 
+            $queryParams = [];
+            if (!empty($_GET['search'])) $queryParams['search'] = $_GET['search'];
+            if (!empty($_GET['date'])) $queryParams['date'] = $_GET['date'];
+            $searchParam = !empty($queryParams) ? '&' . http_build_query($queryParams) : ''; 
+            ?>
             
             <!-- Prev -->
             <?php if ($page > 1): ?>

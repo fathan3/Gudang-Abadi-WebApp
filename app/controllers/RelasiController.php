@@ -5,12 +5,13 @@ class RelasiController {
         $barangModel = new BarangModel();
         
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $date_filter = isset($_GET['date']) ? trim($_GET['date']) : '';
         $page = isset($_GET['p']) ? (int)$_GET['p'] : 1;
         if ($page < 1) $page = 1;
         $limit = 30;
         $offset = ($page - 1) * $limit;
 
-        $clients = $relasiModel->getAllWithStocks($limit, $offset, $search);
+        $clients = $relasiModel->getAllWithStocks($limit, $offset, $search, $date_filter);
         $barangList = $barangModel->getAll();
         
         $total = $relasiModel->countAllRelasi($search);
@@ -24,11 +25,16 @@ class RelasiController {
         $barangModel = new BarangModel();
         
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+        $date_filter = isset($_GET['date']) ? trim($_GET['date']) : '';
         // Fetch all without limit
-        $clients = $relasiModel->getAllWithStocks(1000000, 0, $search);
+        $clients = $relasiModel->getAllWithStocks(1000000, 0, $search, $date_filter);
         $barangList = $barangModel->getAll();
 
-        $filename = "Stok_Relasi_" . date('Y-m-d') . ".xls";
+        if (!empty($date_filter)) {
+            $filename = "Stok_Relasi_" . date('Y-m-d', strtotime($date_filter)) . ".xls";
+        } else {
+            $filename = "Stok_Relasi_Saat_Ini_" . date('Y-m-d') . ".xls";
+        }
 
         ob_clean();
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');

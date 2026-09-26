@@ -133,11 +133,11 @@
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-warning font-medium">-<?= $keluar ?></td>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center font-bold text-base bg-indigo-50/30 dark:bg-indigo-900/5">
                                     <?php if ($akhir > 0): ?>
-                                        <span class="text-warning"><?= $akhir ?></span>
+                                        <span class="text-success"><?= $akhir ?></span>
                                     <?php elseif ($akhir < 0): ?>
-                                        <span class="text-danger"><?= $akhir ?></span>
+                                        <span class="text-warning"><?= $akhir ?></span>
                                     <?php else: ?>
-                                        <span class="text-slate-300 dark:text-slate-600">0</span>
+                                        <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>

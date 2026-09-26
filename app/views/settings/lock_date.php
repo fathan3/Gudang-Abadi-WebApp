@@ -1,55 +1,67 @@
-<?php
-$title = "Tanggal Penguncian";
-require_once __DIR__ . '/../layout/header.php';
-?>
+<?php require_once __DIR__ . '/../layout/header.php'; ?>
 
-<div class="bg-white rounded-lg shadow-sm border border-slate-200">
-    <div class="p-6 border-b border-slate-200">
-        <h2 class="text-2xl font-bold text-slate-800">Tanggal Penguncian</h2>
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+    <div>
+        <h2 class="text-2xl font-bold tracking-tight">Pengaturan Sistem</h2>
+        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Kelola tanggal penguncian transaksi dan hak akses akun pengguna</p>
+    </div>
+</div>
+
+<!-- Settings Panel with Navigation Tabs -->
+<div class="glass-panel rounded-2xl shadow-sm mb-8">
+    <div class="flex border-b border-slate-200 dark:border-gray-700 overflow-x-auto no-scrollbar pt-2 px-6">
+        <a href="<?= BASE_URL ?>settings/lock_date" class="px-6 py-4 font-semibold text-sm whitespace-nowrap border-b-2 text-primary border-primary dark:text-primary no-underline flex items-center gap-2">
+            <i class="ph-bold ph-lock text-base"></i> Tanggal Penguncian
+        </a>
+        <a href="<?= BASE_URL ?>settings/users" class="px-6 py-4 font-semibold text-sm whitespace-nowrap border-b-2 text-slate-500 dark:text-gray-400 border-transparent hover:text-slate-700 dark:hover:text-gray-300 no-underline flex items-center gap-2">
+            <i class="ph-bold ph-users text-base"></i> Manajemen Akun Pengguna
+        </a>
     </div>
 
     <div class="p-6">
         <?php if (isset($_GET['msg'])): ?>
             <?php if ($_GET['msg'] == 'success_save'): ?>
-                <div class="bg-emerald-100 text-emerald-700 p-4 rounded mb-6">Tanggal penguncian berhasil disimpan.</div>
+                <div class="flex items-center justify-between p-4 mb-6 rounded-xl badge-success">
+                    <p class="font-medium">Tanggal penguncian berhasil disimpan!</p>
+                </div>
             <?php elseif ($_GET['msg'] == 'success_delete'): ?>
-                <div class="bg-emerald-100 text-emerald-700 p-4 rounded mb-6">Tanggal penguncian berhasil dihapus.</div>
+                <div class="flex items-center justify-between p-4 mb-6 rounded-xl badge-info">
+                    <p class="font-medium">Tanggal penguncian berhasil dihapus!</p>
+                </div>
             <?php endif; ?>
         <?php endif; ?>
 
-        <div class="mb-8">
-            <p class="text-slate-600 mb-6">
-                Dengan tanggal penguncian maka semua transaksi pada dan sebelum tanggal penguncian tidak dapat diubah, dihapus dan ditambah. Kamu bisa mengubah tanggal penguncian setiap saat.
+        <div class="max-w-2xl">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100 mb-2">Periode Penguncian Transaksi</h3>
+            <p class="text-slate-500 dark:text-gray-400 text-sm mb-6">
+                Semua transaksi pengiriman, penyesuaian stok, dan transfer pada dan sebelum tanggal penguncian tidak dapat diubah atau dihapus oleh pengguna.
             </p>
 
-            <form action="<?= BASE_URL ?>settings/lock_date" method="POST" class="max-w-md">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-red-500 mb-1">
-                        * Cegah semua pengguna untuk membuat perubahan pada tanggal dan sebelum tanggal <span class="text-slate-400 cursor-help" title="Data sebelum tanggal ini tidak bisa dimanipulasi">?</span>
+            <form action="<?= BASE_URL ?>settings/lock_date" method="POST" class="space-y-4 max-w-md">
+                <div>
+                    <label class="form-label text-danger flex items-center gap-1">
+                        <i class="ph-bold ph-warning"></i> Batas Tanggal Terkunci
                     </label>
-                    <input type="date" name="lock_date" value="<?= htmlspecialchars($current_lock_date) ?>" required class="w-full border border-slate-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    <input type="date" name="lock_date" value="<?= htmlspecialchars($current_lock_date) ?>" required class="form-control">
                 </div>
                 
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded shadow-sm flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-save" viewBox="0 0 16 16">
-                        <path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2z"/>
-                    </svg>
-                    Simpan
+                <button type="submit" class="btn-primary">
+                    <i class="ph-bold ph-floppy-disk text-base"></i>
+                    Simpan Penguncian
                 </button>
             </form>
         </div>
 
-        <hr class="my-8 border-slate-200">
+        <hr class="my-8 border-slate-200 dark:border-gray-700">
 
-        <div>
-            <p class="text-slate-600 mb-4">Klik tombol di bawah untuk menghapus tanggal penguncian</p>
-            <form action="<?= BASE_URL ?>settings/lock_date" method="POST" onsubmit="return confirm('Yakin ingin menghapus tanggal penguncian? Data sebelumnya akan bisa diakses kembali.');">
+        <div class="max-w-2xl">
+            <h4 class="font-bold text-slate-800 dark:text-gray-100 mb-2">Hapus Penguncian</h4>
+            <p class="text-slate-500 dark:text-gray-400 text-sm mb-4">Membuka kembali semua transaksi historis untuk dapat diedit jika diperlukan.</p>
+            <form action="<?= BASE_URL ?>settings/lock_date" method="POST" onsubmit="return confirm('Yakin ingin menghapus tanggal penguncian? Data transaksi lama akan bisa diedit kembali.');">
                 <input type="hidden" name="action" value="delete">
-                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-6 rounded shadow-sm flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
-                    </svg>
+                <button type="submit" class="btn-danger btn-sm">
+                    <i class="ph-bold ph-trash text-base"></i>
                     Hapus Tanggal Penguncian
                 </button>
             </form>

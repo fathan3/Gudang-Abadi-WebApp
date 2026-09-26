@@ -44,6 +44,18 @@ if (!isset($_SESSION['user_id']) && strtolower($controllerParam) !== 'auth') {
     exit;
 }
 
+// Role Authorization Middleware
+if (isset($_SESSION['user_id'])) {
+    $userRole = $_SESSION['user_role'] ?? 'admin';
+    if ($userRole === 'stok_harian') {
+        $restrictedControllers = ['audit', 'settings'];
+        if (in_array(strtolower($controllerParam), $restrictedControllers)) {
+            header("Location: " . BASE_URL . "dashboard?msg=access_denied");
+            exit;
+        }
+    }
+}
+
 // Format controller class name (e.g. "dashboard" -> "DashboardController")
 $controllerName = ucfirst(strtolower($controllerParam)) . 'Controller';
 $actionName = strtolower($actionParam);

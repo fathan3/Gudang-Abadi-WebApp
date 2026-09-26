@@ -17,6 +17,7 @@ class AuthController {
             if ($user) {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_name'] = $user['nama_lengkap'];
+                $_SESSION['user_role'] = $user['role'] ?? 'admin';
                 header("Location: " . BASE_URL . "dashboard");
                 exit;
             } else {

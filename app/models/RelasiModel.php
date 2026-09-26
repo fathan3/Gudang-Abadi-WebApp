@@ -200,10 +200,15 @@ class RelasiModel {
         return $stmt->fetchColumn();
     }
 
-    public function getAllWithStocks($limit = 30, $offset = 0, $search = '') {
+    public function getAllWithStocks($limit = 30, $offset = 0, $search = '', $date = '') {
         $whereClause = "";
         if (!empty($search)) {
             $whereClause = "WHERE nama_relasi LIKE :search";
+        }
+
+        $dateClause = "";
+        if (!empty($date)) {
+            $dateClause = " AND p.tanggal <= :date";
         }
 
         $sql = "SELECT 
@@ -219,13 +224,16 @@ class RelasiModel {
                 FROM (SELECT * FROM relasi $whereClause ORDER BY nama_relasi ASC LIMIT :limit OFFSET :offset) r
                 CROSS JOIN barang b
                 LEFT JOIN relasi_stok_awal sa ON sa.relasi_id = r.id AND sa.barang_id = b.id
-                LEFT JOIN pengiriman p ON p.relasi_id = r.id AND p.barang_id = b.id
+                LEFT JOIN pengiriman p ON p.relasi_id = r.id AND p.barang_id = b.id $dateClause
                 GROUP BY r.id, b.id
                 ORDER BY r.nama_relasi ASC, b.nama_barang ASC";
         
         $stmt = $this->db->prepare($sql);
         if (!empty($search)) {
             $stmt->bindValue(':search', '%' . $search . '%', PDO::PARAM_STR);
+        }
+        if (!empty($date)) {
+            $stmt->bindValue(':date', $date, PDO::PARAM_STR);
         }
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
