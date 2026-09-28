@@ -15,7 +15,13 @@ class GudangModel {
                 JOIN barang b ON sg.barang_id = b.id
                 ORDER BY b.nama_barang ASC";
         $stmt = $this->db->query($sql);
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+        foreach ($rows as &$r) {
+            $r['stok'] = (int)($r['stok'] ?? ((int)$r['stok_ready'] + (int)$r['stok_kosong']));
+            $r['stok_ready'] = $r['stok'];
+            $r['stok_kosong'] = 0;
+        }
+        return $rows;
     }
 
     public function getWarehouseStockAtDate($date) {
@@ -24,15 +30,19 @@ class GudangModel {
         $stockMap = [];
         foreach ($currentStocks as $s) {
             $stockMap[$s['barang_id']] = [
+                'barang_id' => $s['barang_id'],
                 'nama_barang' => $s['nama_barang'],
                 'deskripsi' => $s['deskripsi'],
-                'stok_ready' => (int)$s['stok_ready'],
-                'stok_kosong' => (int)$s['stok_kosong']
+                'stok' => (int)$s['stok'],
+                'stok_ready' => (int)$s['stok'],
+                'stok_kosong' => 0
             ];
         }
 
         // 2. Reverse 'pengiriman' that occurred AFTER the date
-        $stmt_pengiriman = $this->db->prepare("SELECT barang_id, jumlah_masuk, kondisi_kirim, jumlah_keluar, kondisi_kembali FROM pengiriman WHERE tanggal > ?");
+        // Kirim (masuk ke mitra) keluar dari gudang -> balikkan dengan menambah stok gudang
+        // Kembali (keluar dari mitra) masuk ke gudang -> balikkan dengan mengurangi stok gudang
+        $stmt_pengiriman = $this->db->prepare("SELECT barang_id, jumlah_masuk, jumlah_keluar FROM pengiriman WHERE tanggal > ?");
         $stmt_pengiriman->execute([$date]);
         $pengirimans = $stmt_pengiriman->fetchAll();
 
@@ -40,19 +50,13 @@ class GudangModel {
             $b_id = $p['barang_id'];
             if (!isset($stockMap[$b_id])) continue;
 
-            // Reverse Kirim
-            if ($p['kondisi_kirim'] == 'Isi') $stockMap[$b_id]['stok_ready'] += $p['jumlah_masuk'];
-            elseif ($p['kondisi_kirim'] == 'Kosong') $stockMap[$b_id]['stok_kosong'] += $p['jumlah_masuk'];
-
-            // Reverse Kembali
-            if ($p['kondisi_kembali'] == 'Isi') $stockMap[$b_id]['stok_ready'] -= $p['jumlah_keluar'];
-            elseif ($p['kondisi_kembali'] == 'Kosong') $stockMap[$b_id]['stok_kosong'] -= $p['jumlah_keluar'];
+            $stockMap[$b_id]['stok'] += (int)$p['jumlah_masuk'];
+            $stockMap[$b_id]['stok'] -= (int)$p['jumlah_keluar'];
+            $stockMap[$b_id]['stok_ready'] = $stockMap[$b_id]['stok'];
         }
 
-        
         // 3. Reverse 'gudang_transaksi' that occurred AFTER the date
-        // Gunakan kolom kondisi_stok yang baru untuk kalkulasi yang lebih akurat
-        $stmt_gt = $this->db->prepare("SELECT barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok FROM gudang_transaksi WHERE tanggal > ?");
+        $stmt_gt = $this->db->prepare("SELECT barang_id, tipe_transaksi, jumlah, keterangan FROM gudang_transaksi WHERE tanggal > ?");
         $stmt_gt->execute([$date]);
         $gts = $stmt_gt->fetchAll();
 
@@ -61,32 +65,16 @@ class GudangModel {
             if (!isset($stockMap[$b_id])) continue;
 
             $qty = (int)$gt['jumlah'];
-            $kondisi = isset($gt['kondisi_stok']) && $gt['kondisi_stok'] ? $gt['kondisi_stok'] : 'ready';
 
-            if ($gt['tipe_transaksi'] == 'refill') {
-                // Refill: decreases empty stock, increases full stock (in original action)
-                // Reverse: decreases full stock, increases empty stock
-                $stockMap[$b_id]['stok_ready'] -= $qty;
-                $stockMap[$b_id]['stok_kosong'] += $qty;
-            } elseif ($gt['tipe_transaksi'] == 'beli_baru') {
-                if ($kondisi === 'kosong') {
-                    $stockMap[$b_id]['stok_kosong'] -= $qty;
-                } else {
-                    $stockMap[$b_id]['stok_ready'] -= $qty;
-                }
-            } elseif ($gt['tipe_transaksi'] == 'jual_rusak') {
-                if ($kondisi === 'kosong') {
-                    $stockMap[$b_id]['stok_kosong'] += $qty;
-                } else {
-                    $stockMap[$b_id]['stok_ready'] += $qty;
-                }
+            if ($gt['tipe_transaksi'] == 'beli_baru' || $gt['tipe_transaksi'] == 'pembelian') {
+                $stockMap[$b_id]['stok'] -= $qty;
+            } elseif ($gt['tipe_transaksi'] == 'jual_rusak' || $gt['tipe_transaksi'] == 'penjualan' || $gt['tipe_transaksi'] == 'rusak') {
+                $stockMap[$b_id]['stok'] += $qty;
             } elseif ($gt['tipe_transaksi'] == 'koreksi') {
-                if ($kondisi === 'kosong') {
-                    $stockMap[$b_id]['stok_kosong'] -= $qty;
-                } else {
-                    $stockMap[$b_id]['stok_ready'] -= $qty;
-                }
+                $stockMap[$b_id]['stok'] -= $qty;
             }
+            // 'refill' does not change total cylinders in warehouse
+            $stockMap[$b_id]['stok_ready'] = $stockMap[$b_id]['stok'];
         }
 
         return array_values($stockMap);
@@ -106,52 +94,33 @@ class GudangModel {
         return $stmt->fetchAll();
     }
 
-    public function addAdjustment($tanggal, $barang_id, $tipe_transaksi, $jumlah, $target_stok = 'ready', $keterangan = '') {
+    public function addAdjustment($tanggal, $barang_id, $tipe_transaksi, $jumlah, $keterangan = '') {
         try {
             $this->db->beginTransaction();
             
-            // Insert log
-            $stmt = $this->db->prepare(
-                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok) 
-                 VALUES (?, ?, ?, ?, ?, ?)"
-            );
-            $stmt->execute([$tanggal, $barang_id, $tipe_transaksi, $jumlah, $keterangan, $target_stok]);
-            
-            // Update stok_gudang based on action
-            if ($tipe_transaksi === 'refill') {
-                // Refill: decreases empty stock, increases full stock
-                $stmt_stock = $this->db->prepare(
-                    "UPDATE stok_gudang 
-                     SET stok_kosong = stok_kosong - ?, 
-                         stok_ready = stok_ready + ? 
-                     WHERE barang_id = ?"
-                );
-                $stmt_stock->execute([$jumlah, $jumlah, $barang_id]);
-            } else if ($tipe_transaksi === 'beli_baru') {
-                // Buy: increases selected stock type (ready or kosong)
-                if ($target_stok === 'kosong') {
-                    $stmt_stock = $this->db->prepare("UPDATE stok_gudang SET stok_kosong = stok_kosong + ? WHERE barang_id = ?");
-                } else {
-                    $stmt_stock = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready + ? WHERE barang_id = ?");
-                }
-                $stmt_stock->execute([$jumlah, $barang_id]);
-            } else if ($tipe_transaksi === 'jual_rusak') {
-                // Sell/Damaged: decreases selected stock type
-                if ($target_stok === 'kosong') {
-                    $stmt_stock = $this->db->prepare("UPDATE stok_gudang SET stok_kosong = stok_kosong - ? WHERE barang_id = ?");
-                } else {
-                    $stmt_stock = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready - ? WHERE barang_id = ?");
-                }
-                $stmt_stock->execute([$jumlah, $barang_id]);
-            } else if ($tipe_transaksi === 'koreksi') {
-                // Manual correction (can be positive or negative)
-                if ($target_stok === 'kosong') {
-                    $stmt_stock = $this->db->prepare("UPDATE stok_gudang SET stok_kosong = stok_kosong + ? WHERE barang_id = ?");
-                } else {
-                    $stmt_stock = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready + ? WHERE barang_id = ?");
-                }
-                $stmt_stock->execute([$jumlah, $barang_id]);
+            $jumlah = (int)$jumlah;
+            $delta = 0;
+
+            if ($tipe_transaksi === 'beli_baru' || $tipe_transaksi === 'pembelian') {
+                $delta = abs($jumlah);
+            } elseif ($tipe_transaksi === 'jual_rusak' || $tipe_transaksi === 'penjualan' || $tipe_transaksi === 'rusak') {
+                $delta = -abs($jumlah);
+            } elseif ($tipe_transaksi === 'koreksi') {
+                $delta = $jumlah;
+            } else {
+                $delta = $jumlah;
             }
+
+            // Insert log into gudang_transaksi
+            $stmt = $this->db->prepare(
+                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) 
+                 VALUES (?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([$tanggal, $barang_id, $tipe_transaksi, $jumlah, $keterangan]);
+            
+            // Update stok_gudang
+            $stmt_stock = $this->db->prepare("UPDATE stok_gudang SET stok = stok + ?, stok_ready = stok WHERE barang_id = ?");
+            $stmt_stock->execute([$delta, $barang_id]);
             
             $this->db->commit();
             
@@ -164,12 +133,17 @@ class GudangModel {
         }
     }
 
-    public function transferStock($tanggal, $barang_asal_id, $kondisi_asal, $barang_tujuan_id, $kondisi_tujuan, $jumlah, $keterangan) {
+    public function transferStock($tanggal, $barang_asal_id, $barang_tujuan_id, $jumlah, $keterangan) {
         try {
             $this->db->beginTransaction();
             
-            // Check stock availability
-            $stmt_check = $this->db->prepare("SELECT stok_ready, stok_kosong FROM stok_gudang WHERE barang_id = ?");
+            $jumlah = (int)$jumlah;
+            if ($jumlah <= 0) {
+                throw new Exception("Jumlah transfer harus lebih dari 0.");
+            }
+
+            // Check stock availability on origin
+            $stmt_check = $this->db->prepare("SELECT stok FROM stok_gudang WHERE barang_id = ?");
             $stmt_check->execute([$barang_asal_id]);
             $stok_asal = $stmt_check->fetch();
             
@@ -177,40 +151,33 @@ class GudangModel {
                 throw new Exception("Barang asal tidak ditemukan di gudang.");
             }
             
-            if ($kondisi_asal === 'ready' && $stok_asal['stok_ready'] < $jumlah) {
-                throw new Exception("Stok ready barang asal tidak mencukupi untuk transfer.");
-            }
-            if ($kondisi_asal === 'kosong' && $stok_asal['stok_kosong'] < $jumlah) {
-                throw new Exception("Stok kosong barang asal tidak mencukupi untuk transfer.");
+            if ((int)$stok_asal['stok'] < $jumlah) {
+                throw new Exception("Stok barang asal (" . (int)$stok_asal['stok'] . ") tidak mencukupi untuk transfer sebanyak " . $jumlah . " tabung.");
             }
 
             // 1. Deduct from origin
-            $col_asal = $kondisi_asal === 'ready' ? 'stok_ready' : 'stok_kosong';
-            $stmt_kurang = $this->db->prepare("UPDATE stok_gudang SET {$col_asal} = {$col_asal} - ? WHERE barang_id = ?");
+            $stmt_kurang = $this->db->prepare("UPDATE stok_gudang SET stok = stok - ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_kurang->execute([$jumlah, $barang_asal_id]);
             
             // 2. Add to destination
-            $col_tujuan = $kondisi_tujuan === 'ready' ? 'stok_ready' : 'stok_kosong';
-            $stmt_tambah = $this->db->prepare("UPDATE stok_gudang SET {$col_tujuan} = {$col_tujuan} + ? WHERE barang_id = ?");
+            $stmt_tambah = $this->db->prepare("UPDATE stok_gudang SET stok = stok + ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_tambah->execute([$jumlah, $barang_tujuan_id]);
             
-            // 3. Log transaction
-            // Log as 'koreksi' (transfer_out) for origin
+            // 3. Log transactions
             $stmt_log_out = $this->db->prepare(
-                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok) 
-                 VALUES (?, ?, 'koreksi', ?, ?, ?)"
+                "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) 
+                 VALUES (?, ?, 'koreksi', ?, ?)"
             );
             $ket_out = "Transfer Keluar: " . $keterangan;
-            $stmt_log_out->execute([$tanggal, $barang_asal_id, -$jumlah, $ket_out, $kondisi_asal]);
+            $stmt_log_out->execute([$tanggal, $barang_asal_id, -$jumlah, $ket_out]);
             
-            // Log as 'koreksi' (transfer_in) for destination
-            if ($barang_asal_id != $barang_tujuan_id || $kondisi_asal != $kondisi_tujuan) {
+            if ($barang_asal_id != $barang_tujuan_id) {
                 $stmt_log_in = $this->db->prepare(
-                    "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan, kondisi_stok) 
-                     VALUES (?, ?, 'koreksi', ?, ?, ?)"
+                    "INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) 
+                     VALUES (?, ?, 'koreksi', ?, ?)"
                 );
                 $ket_in = "Transfer Masuk: " . $keterangan;
-                $stmt_log_in->execute([$tanggal, $barang_tujuan_id, $jumlah, $ket_in, $kondisi_tujuan]);
+                $stmt_log_in->execute([$tanggal, $barang_tujuan_id, $jumlah, $ket_in]);
             }
             
             $this->db->commit();
@@ -239,23 +206,16 @@ class GudangModel {
             
             $qty = (int)$gt['jumlah'];
             $b_id = $gt['barang_id'];
-            $kondisi = $gt['kondisi_stok'] ?? 'ready';
             
             // Reverse stock
-            if ($gt['tipe_transaksi'] == 'refill') {
-                $stmt = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready - ?, stok_kosong = stok_kosong + ? WHERE barang_id = ?");
-                $stmt->execute([$qty, $qty, $b_id]);
-            } elseif ($gt['tipe_transaksi'] == 'beli_baru') {
-                $col = $kondisi === 'kosong' ? 'stok_kosong' : 'stok_ready';
-                $stmt = $this->db->prepare("UPDATE stok_gudang SET {$col} = {$col} - ? WHERE barang_id = ?");
+            if ($gt['tipe_transaksi'] == 'beli_baru' || $gt['tipe_transaksi'] == 'pembelian') {
+                $stmt = $this->db->prepare("UPDATE stok_gudang SET stok = stok - ?, stok_ready = stok WHERE barang_id = ?");
                 $stmt->execute([$qty, $b_id]);
-            } elseif ($gt['tipe_transaksi'] == 'jual_rusak') {
-                $col = $kondisi === 'kosong' ? 'stok_kosong' : 'stok_ready';
-                $stmt = $this->db->prepare("UPDATE stok_gudang SET {$col} = {$col} + ? WHERE barang_id = ?");
-                $stmt->execute([$qty, $b_id]);
+            } elseif ($gt['tipe_transaksi'] == 'jual_rusak' || $gt['tipe_transaksi'] == 'penjualan' || $gt['tipe_transaksi'] == 'rusak') {
+                $stmt = $this->db->prepare("UPDATE stok_gudang SET stok = stok + ?, stok_ready = stok WHERE barang_id = ?");
+                $stmt->execute([abs($qty), $b_id]);
             } elseif ($gt['tipe_transaksi'] == 'koreksi') {
-                $col = $kondisi === 'kosong' ? 'stok_kosong' : 'stok_ready';
-                $stmt = $this->db->prepare("UPDATE stok_gudang SET {$col} = {$col} - ? WHERE barang_id = ?");
+                $stmt = $this->db->prepare("UPDATE stok_gudang SET stok = stok - ?, stok_ready = stok WHERE barang_id = ?");
                 $stmt->execute([$qty, $b_id]);
             }
             

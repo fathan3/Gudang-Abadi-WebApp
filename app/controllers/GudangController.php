@@ -49,7 +49,7 @@ class GudangController {
         echo '<table border="1" cellpadding="5">';
         
         echo '<tr>';
-        $headers = ['Nama Tabung', 'Deskripsi', 'Stok Ready (Isi)', 'Stok Kosong'];
+        $headers = ['Nama Tabung', 'Deskripsi', 'Total Stok di Gudang'];
         foreach ($headers as $head) {
             echo '<th style="background-color: #0d9488; color: #ffffff; font-weight: bold; text-align: center;">' . $head . '</th>';
         }
@@ -58,9 +58,8 @@ class GudangController {
         foreach ($warehouseStocks as $s) {
             echo '<tr>';
             echo '<td>' . htmlspecialchars($s['nama_barang']) . '</td>';
-            echo '<td>' . htmlspecialchars($s['deskripsi']) . '</td>';
-            echo '<td style="text-align: right; font-weight: bold;">' . $s['stok_ready'] . '</td>';
-            echo '<td style="text-align: right; font-weight: bold;">' . $s['stok_kosong'] . '</td>';
+            echo '<td>' . htmlspecialchars($s['deskripsi'] ?: '-') . '</td>';
+            echo '<td style="text-align: right; font-weight: bold;">' . $s['stok'] . '</td>';
             echo '</tr>';
         }
         
@@ -93,8 +92,9 @@ class GudangController {
         foreach ($transactions as $t) {
             $tipe = '';
             if ($t['tipe_transaksi'] === 'refill') $tipe = 'Refill';
-            elseif ($t['tipe_transaksi'] === 'beli_baru') $tipe = 'Pembelian';
-            elseif ($t['tipe_transaksi'] === 'rusak') $tipe = 'Penyusutan (Rusak/Hilang)';
+            elseif ($t['tipe_transaksi'] === 'beli_baru' || $t['tipe_transaksi'] === 'pembelian') $tipe = 'Pembelian / Tambah';
+            elseif ($t['tipe_transaksi'] === 'jual_rusak' || $t['tipe_transaksi'] === 'penjualan' || $t['tipe_transaksi'] === 'rusak') $tipe = 'Pengurangan / Rusak';
+            elseif ($t['tipe_transaksi'] === 'koreksi') $tipe = 'Koreksi Stok';
             else $tipe = htmlspecialchars($t['tipe_transaksi']);
 
             echo '<tr>';
@@ -102,7 +102,7 @@ class GudangController {
             echo '<td>' . htmlspecialchars($t['nama_barang']) . '</td>';
             echo '<td>' . $tipe . '</td>';
             echo '<td style="text-align: right;">' . $t['jumlah'] . '</td>';
-            echo '<td>' . htmlspecialchars($t['keterangan']) . '</td>';
+            echo '<td>' . htmlspecialchars($t['keterangan'] ?: '-') . '</td>';
             echo '</tr>';
         }
         
@@ -119,8 +119,7 @@ class GudangController {
             $barang_id = (int)$_POST['barang_id'];
             $tipe_transaksi = $_POST['tipe_transaksi'];
             $jumlah = (int)$_POST['jumlah'];
-            $target_stok = isset($_POST['target_stok']) ? $_POST['target_stok'] : 'ready';
-            $keterangan = trim($_POST['keterangan']);
+            $keterangan = trim($_POST['keterangan'] ?? '');
 
             require_once __DIR__ . '/../models/SettingsModel.php';
             $settingsModel = new SettingsModel();
@@ -131,21 +130,9 @@ class GudangController {
 
             $gudangModel = new GudangModel();
             
-            // Validasi Refill
-            if ($tipe_transaksi === 'refill') {
-                $db = (new Database())->getConnection();
-                $stmt = $db->prepare("SELECT stok_kosong FROM stok_gudang WHERE barang_id = ?");
-                $stmt->execute([$barang_id]);
-                $stok = $stmt->fetch();
-                
-                if (!$stok || $jumlah > $stok['stok_kosong']) {
-                    $error = "Gagal: Jumlah refill (" . $jumlah . ") melebihi stok tabung kosong di gudang (" . ($stok ? $stok['stok_kosong'] : 0) . ").";
-                }
-            }
-            
             if (!isset($error)) {
                 try {
-                    $gudangModel->addAdjustment($tanggal, $barang_id, $tipe_transaksi, $jumlah, $target_stok, $keterangan);
+                    $gudangModel->addAdjustment($tanggal, $barang_id, $tipe_transaksi, $jumlah, $keterangan);
                     header("Location: " . BASE_URL . "gudang?msg=success_adjust");
                     exit;
                 } catch (Exception $e) {
@@ -164,11 +151,9 @@ class GudangController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tanggal = $_POST['tanggal'];
             $barang_asal_id = (int)$_POST['barang_asal_id'];
-            $kondisi_asal = $_POST['kondisi_asal'];
             $barang_tujuan_id = (int)$_POST['barang_tujuan_id'];
-            $kondisi_tujuan = $_POST['kondisi_tujuan'];
             $jumlah = (int)$_POST['jumlah'];
-            $keterangan = trim($_POST['keterangan']);
+            $keterangan = trim($_POST['keterangan'] ?? '');
 
             require_once __DIR__ . '/../models/SettingsModel.php';
             $settingsModel = new SettingsModel();
@@ -181,7 +166,7 @@ class GudangController {
             
             if (!isset($error)) {
                 try {
-                    $gudangModel->transferStock($tanggal, $barang_asal_id, $kondisi_asal, $barang_tujuan_id, $kondisi_tujuan, $jumlah, $keterangan);
+                    $gudangModel->transferStock($tanggal, $barang_asal_id, $barang_tujuan_id, $jumlah, $keterangan);
                     header("Location: " . BASE_URL . "gudang?msg=success_transfer");
                     exit;
                 } catch (Exception $e) {
@@ -196,7 +181,7 @@ class GudangController {
     public function create_cylinder() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nama_barang = trim($_POST['nama_barang']);
-            $deskripsi = trim($_POST['deskripsi']);
+            $deskripsi = trim($_POST['deskripsi'] ?? '');
 
             $barangModel = new BarangModel();
             try {
@@ -222,7 +207,7 @@ class GudangController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $nama_barang = trim($_POST['nama_barang']);
-            $deskripsi = trim($_POST['deskripsi']);
+            $deskripsi = trim($_POST['deskripsi'] ?? '');
 
             try {
                 $barangModel->update($id, $nama_barang, $deskripsi);
@@ -259,7 +244,7 @@ class GudangController {
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $tanggal = $_POST['tanggal'];
-            $keterangan = trim($_POST['keterangan']);
+            $keterangan = trim($_POST['keterangan'] ?? '');
 
             require_once __DIR__ . '/../models/SettingsModel.php';
             $settingsModel = new SettingsModel();

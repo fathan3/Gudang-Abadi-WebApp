@@ -4,7 +4,7 @@
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
     <div>
         <h2 class="text-2xl font-bold tracking-tight">Transfer & Konversi Tabung</h2>
-        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Ubah fungsi/tipe tabung atau pindah status dari isi ke kosong</p>
+        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Ubah fungsi/tipe tabung dari satu jenis tabung ke jenis tabung lainnya</p>
     </div>
     <div>
         <a href="<?= BASE_URL ?>gudang" class="btn-secondary">Kembali</a>
@@ -40,10 +40,10 @@
             <div class="p-5 border border-slate-200 dark:border-gray-700 rounded-xl bg-slate-50/50 dark:bg-gray-800/50">
                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                     <i class="ph-bold ph-export text-danger"></i>
-                    Dari (Asal)
+                    Dari (Tabung Asal)
                 </h3>
                 
-                <div class="form-group mb-4">
+                <div class="form-group">
                     <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="barang_asal_id">Jenis Tabung Asal</label>
                     <select id="barang_asal_id" name="barang_asal_id" class="form-control choices-select" required>
                         <option value="" disabled selected>-- Pilih Tabung Asal --</option>
@@ -51,14 +51,7 @@
                             <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['nama_barang']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="kondisi_asal">Status Asal</label>
-                    <select id="kondisi_asal" name="kondisi_asal" class="form-control" required>
-                        <option value="ready">Stok READY / Full</option>
-                        <option value="kosong">Stok KOSONG</option>
-                    </select>
+                    <span class="form-help block text-xs text-slate-500 mt-2">Stok tabung ini di gudang akan berkurang.</span>
                 </div>
             </div>
             
@@ -69,10 +62,10 @@
                 </div>
                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2 text-primary">
                     <i class="ph-bold ph-import"></i>
-                    Menjadi (Tujuan)
+                    Menjadi (Tabung Tujuan)
                 </h3>
                 
-                <div class="form-group mb-4">
+                <div class="form-group">
                     <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="barang_tujuan_id">Jenis Tabung Tujuan</label>
                     <select id="barang_tujuan_id" name="barang_tujuan_id" class="form-control choices-select" required>
                         <option value="" disabled selected>-- Pilih Tabung Tujuan --</option>
@@ -80,21 +73,14 @@
                             <option value="<?= $b['id'] ?>"><?= htmlspecialchars($b['nama_barang']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="kondisi_tujuan">Status Tujuan</label>
-                    <select id="kondisi_tujuan" name="kondisi_tujuan" class="form-control" required>
-                        <option value="ready">Stok READY / Full</option>
-                        <option value="kosong">Stok KOSONG</option>
-                    </select>
+                    <span class="form-help block text-xs text-slate-500 mt-2">Stok tabung ini di gudang akan bertambah.</span>
                 </div>
             </div>
         </div>
 
         <div class="form-group mt-6">
             <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="keterangan">Keterangan / Catatan Tambahan</label>
-            <input type="text" id="keterangan" name="keterangan" class="form-control" placeholder="Contoh: Tabung Joewara diubah fungsi jadi Tabung MP">
+            <input type="text" id="keterangan" name="keterangan" class="form-control" placeholder="Contoh: Tabung OXY diubah fungsi jadi Tabung ARGON">
         </div>
 
         <div class="flex justify-end gap-3 mt-8">

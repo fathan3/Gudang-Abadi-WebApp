@@ -29,13 +29,18 @@ class DashboardController {
         $tabungMitraDetail = [];
         foreach ($clients as $client) {
             foreach ($client['stocks'] as $stock) {
-                $totalTabungMitra += $stock['stok_akhir'];
+                $totalTabungMitra += (int)$stock['stok_akhir'];
                 $nama_barang = $stock['nama_barang'];
                 if (!isset($tabungMitraDetail[$nama_barang])) {
                     $tabungMitraDetail[$nama_barang] = 0;
                 }
-                $tabungMitraDetail[$nama_barang] += $stock['stok_akhir'];
+                $tabungMitraDetail[$nama_barang] += (int)$stock['stok_akhir'];
             }
+        }
+
+        $totalStokGudang = 0;
+        foreach ($warehouseStocks as $w) {
+            $totalStokGudang += (int)$w['stok'];
         }
         
         // Fetch latest deliveries for dashboard summary (last 5)
@@ -60,17 +65,15 @@ class DashboardController {
         foreach ($warehouseStocks as $w) {
             $nama_barang = $w['nama_barang'];
             if (isset($grandTotalTabung[$nama_barang])) {
-                $grandTotalTabung[$nama_barang] += ($w['stok_ready'] + $w['stok_kosong']);
+                $grandTotalTabung[$nama_barang] += (int)$w['stok'];
             } else {
-                $grandTotalTabung[$nama_barang] = ($w['stok_ready'] + $w['stok_kosong']);
+                $grandTotalTabung[$nama_barang] = (int)$w['stok'];
             }
         }
 
         // Sort warehouse stocks for chart (highest total first)
         usort($warehouseStocks, function($a, $b) {
-            $totalA = $a['stok_ready'] + $a['stok_kosong'];
-            $totalB = $b['stok_ready'] + $b['stok_kosong'];
-            return $totalB <=> $totalA;
+            return (int)$b['stok'] <=> (int)$a['stok'];
         });
 
         // Sort grand total (highest total first)

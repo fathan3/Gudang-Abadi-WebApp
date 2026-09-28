@@ -172,17 +172,15 @@ class PengirimanController {
             // 2. Validate all totals
             if (!isset($error)) {
                 foreach ($totals as $b_id => $qty) {
-                    if ($qty['masuk_isi'] > 0 || $qty['masuk_kosong'] > 0) {
-                        $stmt_gudang = $db->prepare("SELECT stok_ready, stok_kosong FROM stok_gudang WHERE barang_id = ?");
+                    $total_masuk = $qty['masuk_isi'] + $qty['masuk_kosong'];
+                    if ($total_masuk > 0) {
+                        $stmt_gudang = $db->prepare("SELECT stok FROM stok_gudang WHERE barang_id = ?");
                         $stmt_gudang->execute([$b_id]);
                         $stok_gudang = $stmt_gudang->fetch();
+                        $current_stok = $stok_gudang ? (int)$stok_gudang['stok'] : 0;
                         
-                        if ($qty['masuk_isi'] > 0 && (!$stok_gudang || $qty['masuk_isi'] > $stok_gudang['stok_ready'])) {
-                            $error = "Gagal: Total Kirim Isi (" . $qty['masuk_isi'] . ") melebihi stok ready di gudang (" . ($stok_gudang ? $stok_gudang['stok_ready'] : 0) . ").";
-                            break;
-                        }
-                        if ($qty['masuk_kosong'] > 0 && (!$stok_gudang || $qty['masuk_kosong'] > $stok_gudang['stok_kosong'])) {
-                            $error = "Gagal: Total Kirim Kosong (" . $qty['masuk_kosong'] . ") melebihi stok kosong di gudang (" . ($stok_gudang ? $stok_gudang['stok_kosong'] : 0) . ").";
+                        if ($total_masuk > $current_stok) {
+                            $error = "Gagal: Total Kirim (" . $total_masuk . ") melebihi total stok di gudang (" . $current_stok . ").";
                             break;
                         }
                     }
@@ -294,26 +292,17 @@ class PengirimanController {
             
             // Baseline untuk Gudang
             if ($jumlah_masuk > 0) {
-                $stmt_gudang = $db->prepare("SELECT stok_ready, stok_kosong FROM stok_gudang WHERE barang_id = ?");
+                $stmt_gudang = $db->prepare("SELECT stok FROM stok_gudang WHERE barang_id = ?");
                 $stmt_gudang->execute([$barang_id]);
                 $stok_gudang = $stmt_gudang->fetch();
+                $baseline_stok = $stok_gudang ? (int)$stok_gudang['stok'] : 0;
                 
-                if ($kondisi_kirim == 'Isi') {
-                    $baseline_ready = $stok_gudang ? $stok_gudang['stok_ready'] : 0;
-                    if ($pengiriman['barang_id'] == $barang_id && $pengiriman['kondisi_kirim'] == 'Isi') {
-                        $baseline_ready += $pengiriman['jumlah_masuk'];
-                    }
-                    if ($jumlah_masuk > $baseline_ready) {
-                        $error = "Gagal: Jumlah kirim (" . $jumlah_masuk . ") melebihi stok ready di gudang (" . $baseline_ready . ").";
-                    }
-                } else if ($kondisi_kirim == 'Kosong') {
-                    $baseline_kosong = $stok_gudang ? $stok_gudang['stok_kosong'] : 0;
-                    if ($pengiriman['barang_id'] == $barang_id && $pengiriman['kondisi_kirim'] == 'Kosong') {
-                        $baseline_kosong += $pengiriman['jumlah_masuk'];
-                    }
-                    if ($jumlah_masuk > $baseline_kosong) {
-                        $error = "Gagal: Jumlah kirim kosong (" . $jumlah_masuk . ") melebihi stok kosong di gudang (" . $baseline_kosong . ").";
-                    }
+                if ($pengiriman['barang_id'] == $barang_id) {
+                    $baseline_stok += (int)$pengiriman['jumlah_masuk'];
+                }
+                
+                if ($jumlah_masuk > $baseline_stok) {
+                    $error = "Gagal: Jumlah kirim (" . $jumlah_masuk . ") melebihi total stok di gudang (" . $baseline_stok . ").";
                 }
             }
             

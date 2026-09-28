@@ -24,8 +24,8 @@ class RelasiModel {
             $this->db->beginTransaction();
             
             // Validate and deduct from warehouse
-            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok_ready FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
-            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready - ? WHERE barang_id = ?");
+            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
+            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok = stok - ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_log = $this->db->prepare("INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) VALUES (CURDATE(), ?, 'koreksi', ?, ?)");
 
             foreach ($stok_awal_array as $barang_id => $stok_awal) {
@@ -33,8 +33,8 @@ class RelasiModel {
                 if ($stok > 0) {
                     $stmt_check->execute([$barang_id]);
                     $row = $stmt_check->fetch();
-                    if (!$row || $stok > $row['stok_ready']) {
-                        throw new Exception("Stok awal (" . $stok . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok_ready'] : 0) . ").");
+                    if (!$row || $stok > $row['stok']) {
+                        throw new Exception("Stok awal (" . $stok . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok'] : 0) . ").");
                     }
                     $stmt_update_gudang->execute([$stok, $barang_id]);
                     $stmt_log->execute([$barang_id, $stok, "Pinjaman stok awal untuk mitra baru: " . $nama_relasi]);
@@ -73,9 +73,9 @@ class RelasiModel {
                 $old_stocks[$row['barang_id']] = (int)$row['stok_awal'];
             }
 
-            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok_ready FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
-            $stmt_update_gudang_kurang = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready - ? WHERE barang_id = ?");
-            $stmt_update_gudang_tambah = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready + ? WHERE barang_id = ?");
+            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
+            $stmt_update_gudang_kurang = $this->db->prepare("UPDATE stok_gudang SET stok = stok - ?, stok_ready = stok WHERE barang_id = ?");
+            $stmt_update_gudang_tambah = $this->db->prepare("UPDATE stok_gudang SET stok = stok + ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_log = $this->db->prepare("INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) VALUES (CURDATE(), ?, 'koreksi', ?, ?)");
 
             // Process differences and validate
@@ -87,8 +87,8 @@ class RelasiModel {
                 if ($diff > 0) { // Needs to take MORE from warehouse
                     $stmt_check->execute([$barang_id]);
                     $row = $stmt_check->fetch();
-                    if (!$row || $diff > $row['stok_ready']) {
-                        throw new Exception("Penambahan stok awal (" . $diff . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok_ready'] : 0) . ").");
+                    if (!$row || $diff > $row['stok']) {
+                        throw new Exception("Penambahan stok awal (" . $diff . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok'] : 0) . ").");
                     }
                     $stmt_update_gudang_kurang->execute([$diff, $barang_id]);
                     $stmt_log->execute([$barang_id, $diff, "Penyesuaian tambah stok awal mitra: " . $nama_relasi]);
@@ -146,8 +146,8 @@ class RelasiModel {
             $stmt_stocks->execute([$id]);
             $stocks = $stmt_stocks->fetchAll();
 
-            // 3. Kembalikan tabung ke gudang (sebagai stok_kosong) dan catat log
-            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok_kosong = stok_kosong + ? WHERE barang_id = ?");
+            // 3. Kembalikan tabung ke gudang dan catat log
+            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok = stok + ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_log = $this->db->prepare("INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) VALUES (CURDATE(), ?, 'koreksi', ?, ?)");
 
             foreach ($stocks as $stock) {

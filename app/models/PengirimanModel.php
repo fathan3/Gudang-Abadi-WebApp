@@ -130,28 +130,14 @@ class PengirimanModel {
             );
             $stmt->execute([$tanggal, $no_surat_jalan, $relasi_id, $barang_id, $jumlah_masuk, $kondisi_kirim, $jumlah_keluar, $kondisi_kembali, $keterangan]);
             
-            $delta_ready = 0;
-            $delta_kosong = 0;
-
-            if ($kondisi_kirim == 'Isi') {
-                $delta_ready -= $jumlah_masuk;
-            } else if ($kondisi_kirim == 'Kosong') {
-                $delta_kosong -= $jumlah_masuk;
-            }
-
-            if ($kondisi_kembali == 'Kosong') {
-                $delta_kosong += $jumlah_keluar;
-            } else if ($kondisi_kembali == 'Isi') {
-                $delta_ready += $jumlah_keluar;
-            }
-
+            // Update total warehouse stock: deduct sent (jumlah_masuk), add returned (jumlah_keluar)
             $stmt_stock = $this->db->prepare(
                 "UPDATE stok_gudang 
-                 SET stok_ready = stok_ready + ?, 
-                     stok_kosong = stok_kosong + ? 
+                 SET stok = stok - ? + ?, 
+                     stok_ready = stok 
                  WHERE barang_id = ?"
             );
-            $stmt_stock->execute([$delta_ready, $delta_kosong, $barang_id]);
+            $stmt_stock->execute([$jumlah_masuk, $jumlah_keluar, $barang_id]);
             
             if (!$inTransaction) {
                 $this->db->commit();
@@ -181,52 +167,41 @@ class PengirimanModel {
                 throw new Exception("Transaction not found.");
             }
             
-            // Helper closure to calc deltas
-            $calcDeltas = function($jm, $kkirim, $jk, $kkembali) {
-                $d_r = 0; $d_k = 0;
-                if ($kkirim == 'Isi') $d_r -= $jm;
-                elseif ($kkirim == 'Kosong') $d_k -= $jm;
-                if ($kkembali == 'Kosong') $d_k += $jk;
-                elseif ($kkembali == 'Isi') $d_r += $jk;
-                return [$d_r, $d_k];
-            };
+            $jumlah_masuk = (int)$jumlah_masuk;
+            $jumlah_keluar = (int)$jumlah_keluar;
+            $orig_masuk = (int)$orig['jumlah_masuk'];
+            $orig_keluar = (int)$orig['jumlah_keluar'];
 
             // If the cylinder type has changed, we revert stock on the old one, and apply stock on the new one
             if ($orig['barang_id'] == $barang_id) {
-                // Same cylinder type
-                $old_deltas = $calcDeltas($orig['jumlah_masuk'], $orig['kondisi_kirim'], $orig['jumlah_keluar'], $orig['kondisi_kembali']);
-                $new_deltas = $calcDeltas($jumlah_masuk, $kondisi_kirim, $jumlah_keluar, $kondisi_kembali);
-                
-                $diff_ready = $new_deltas[0] - $old_deltas[0];
-                $diff_kosong = $new_deltas[1] - $old_deltas[1];
+                // Same cylinder type: difference to warehouse = (orig_masuk - new_masuk) + (new_keluar - orig_keluar)
+                $diff = ($orig_masuk - $jumlah_masuk) + ($jumlah_keluar - $orig_keluar);
                 
                 $stmt_stock = $this->db->prepare(
                     "UPDATE stok_gudang 
-                     SET stok_ready = stok_ready + ?, 
-                         stok_kosong = stok_kosong + ? 
+                     SET stok = stok + ?, 
+                         stok_ready = stok 
                      WHERE barang_id = ?"
                 );
-                $stmt_stock->execute([$diff_ready, $diff_kosong, $barang_id]);
+                $stmt_stock->execute([$diff, $barang_id]);
             } else {
-                // Revert old cylinder stock
-                $old_deltas = $calcDeltas($orig['jumlah_masuk'], $orig['kondisi_kirim'], $orig['jumlah_keluar'], $orig['kondisi_kembali']);
+                // Revert old cylinder stock (gain what was sent, lose what was returned)
                 $stmt_stock_old = $this->db->prepare(
                     "UPDATE stok_gudang 
-                     SET stok_ready = stok_ready + ?, 
-                         stok_kosong = stok_kosong + ? 
+                     SET stok = stok + ? - ?, 
+                         stok_ready = stok 
                      WHERE barang_id = ?"
                 );
-                $stmt_stock_old->execute([-$old_deltas[0], -$old_deltas[1], $orig['barang_id']]);
+                $stmt_stock_old->execute([$orig_masuk, $orig_keluar, $orig['barang_id']]);
                 
-                // Apply new cylinder stock
-                $new_deltas = $calcDeltas($jumlah_masuk, $kondisi_kirim, $jumlah_keluar, $kondisi_kembali);
+                // Apply new cylinder stock (lose what is sent, gain what is returned)
                 $stmt_stock_new = $this->db->prepare(
                     "UPDATE stok_gudang 
-                     SET stok_ready = stok_ready + ?, 
-                         stok_kosong = stok_kosong + ? 
+                     SET stok = stok - ? + ?, 
+                         stok_ready = stok 
                      WHERE barang_id = ?"
                 );
-                $stmt_stock_new->execute([$new_deltas[0], $new_deltas[1], $barang_id]);
+                $stmt_stock_new->execute([$jumlah_masuk, $jumlah_keluar, $barang_id]);
             }
             
             // Update pengiriman details
@@ -262,19 +237,13 @@ class PengirimanModel {
             }
             
             // Reverse stock: Gain what was sent, lose what was received
-            $d_r = 0; $d_k = 0;
-            if ($orig['kondisi_kirim'] == 'Isi') $d_r += $orig['jumlah_masuk'];
-            elseif ($orig['kondisi_kirim'] == 'Kosong') $d_k += $orig['jumlah_masuk'];
-            if ($orig['kondisi_kembali'] == 'Kosong') $d_k -= $orig['jumlah_keluar'];
-            elseif ($orig['kondisi_kembali'] == 'Isi') $d_r -= $orig['jumlah_keluar'];
-
             $stmt_stock = $this->db->prepare(
                 "UPDATE stok_gudang 
-                 SET stok_ready = stok_ready + ?, 
-                     stok_kosong = stok_kosong + ? 
+                 SET stok = stok + ? - ?, 
+                     stok_ready = stok 
                  WHERE barang_id = ?"
             );
-            $stmt_stock->execute([$d_r, $d_k, $orig['barang_id']]);
+            $stmt_stock->execute([(int)$orig['jumlah_masuk'], (int)$orig['jumlah_keluar'], $orig['barang_id']]);
             
             // Delete delivery record
             $stmt = $this->db->prepare("DELETE FROM pengiriman WHERE id = ?");
