@@ -4,10 +4,14 @@
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
     <div>
         <h2 class="text-2xl font-bold tracking-tight">Manajemen Stok Gudang</h2>
-        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Pantau persediaan tabung di gudang (Ready &amp; Kosong), riwayat transaksi, dan manajemen jenis tabung gas</p>
+        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Pantau total persediaan tabung di gudang, riwayat transaksi, dan manajemen jenis tabung gas</p>
     </div>
-    <div>
-        <a href="index.php?controller=gudang&action=adjust" class="btn-primary">
+    <div class="flex items-center gap-3">
+        <a href="<?= BASE_URL ?>gudang/transfer" class="btn-secondary !text-primary border border-primary/20 hover:!bg-primary/10">
+            <i class="ph-bold ph-arrows-left-right text-base"></i>
+            Transfer Tabung
+        </a>
+        <a href="<?= BASE_URL ?>gudang/adjust" class="btn-primary">
             <i class="ph-bold ph-sliders-horizontal text-base"></i>
             Penyesuaian Stok Gudang
         </a>
@@ -18,6 +22,11 @@
     <?php if ($_GET['msg'] === 'success_adjust'): ?>
         <div class="flex items-center justify-between p-4 mb-8 rounded-xl badge-success animate-[slideDown_0.4s_ease-out]">
             <p class="font-medium">Data penyesuaian stok berhasil dicatat!</p>
+            <button class="hover:opacity-75 transition-opacity alert-close-btn">&times;</button>
+        </div>
+    <?php elseif ($_GET['msg'] === 'success_transfer'): ?>
+        <div class="flex items-center justify-between p-4 mb-8 rounded-xl badge-success animate-[slideDown_0.4s_ease-out]">
+            <p class="font-medium">Transfer/konversi tabung berhasil diproses!</p>
             <button class="hover:opacity-75 transition-opacity alert-close-btn">&times;</button>
         </div>
     <?php elseif ($_GET['msg'] === 'success_cylinder_create'): ?>
@@ -46,18 +55,34 @@
 <!-- Tabs -->
 <div class="glass-panel rounded-2xl shadow-sm mb-8">
     <div class="flex border-b border-slate-200 dark:border-gray-700 overflow-x-auto no-scrollbar pt-2 px-6">
-        <button class="px-6 py-4 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors tab-btn <?= (!isset($_GET['tab']) || $_GET['tab'] == 'stocks') ? 'text-primary border-primary dark:text-primary' : 'text-slate-500 dark:text-gray-400 border-transparent hover:text-slate-700 dark:hover:text-gray-300' ?>" data-tab="tab-stocks">Ketersediaan Saat Ini</button>
+        <button class="px-6 py-4 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors tab-btn <?= (!isset($_GET['tab']) || $_GET['tab'] == 'stocks') ? 'text-primary border-primary dark:text-primary' : 'text-slate-500 dark:text-gray-400 border-transparent hover:text-slate-700 dark:hover:text-gray-300' ?>" data-tab="tab-stocks">Ketersediaan Stok Gudang</button>
         <button class="px-6 py-4 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors tab-btn <?= (isset($_GET['tab']) && $_GET['tab'] == 'transactions') ? 'text-primary border-primary dark:text-primary' : 'text-slate-500 dark:text-gray-400 border-transparent hover:text-slate-700 dark:hover:text-gray-300' ?>" data-tab="tab-transactions">Riwayat Transaksi Gudang</button>
         <button class="px-6 py-4 font-semibold text-sm whitespace-nowrap border-b-2 transition-colors tab-btn <?= (isset($_GET['tab']) && $_GET['tab'] == 'cylinders') ? 'text-primary border-primary dark:text-primary' : 'text-slate-500 dark:text-gray-400 border-transparent hover:text-slate-700 dark:hover:text-gray-300' ?>" data-tab="tab-cylinders">Daftar Jenis Tabung (Katalog)</button>
     </div>
 
     <!-- Tab 1: Current Stock Matrix -->
     <div class="tab-content p-6 <?= (!isset($_GET['tab']) || $_GET['tab'] == 'stocks') ? '' : 'hidden' ?>" id="tab-stocks">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100">Ketersediaan Saat Ini</h3>
-            <a href="index.php?controller=gudang&action=export_stok" class="btn-secondary btn-sm !text-success border border-success/20 hover:!bg-success/10" target="_blank">
-                <i class="ph-bold ph-file-csv text-base"></i> Export Excel Stok
-            </a>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100">
+                    <?= !empty($_GET['date']) ? 'Stok Gudang per Tanggal: ' . date('d-m-Y', strtotime($_GET['date'])) : 'Total Stok di Gudang Saat Ini' ?>
+                </h3>
+                <?php if (!empty($_GET['date'])): ?>
+                    <p class="text-xs text-warning mt-1 italic">*Mode Histori: Menampilkan proyeksi stok pada akhir hari tersebut.</p>
+                <?php endif; ?>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-3">
+                <form action="<?= BASE_URL ?>gudang" method="GET" class="flex items-center gap-2">
+                    <input type="date" name="date" value="<?= htmlspecialchars($_GET['date'] ?? '') ?>" class="form-control py-1.5 text-sm w-[150px]" title="Pilih Tanggal Stok">
+                    <button type="submit" class="btn-primary py-1.5 px-4 text-sm">Cek Histori</button>
+                    <?php if(!empty($_GET['date'])): ?>
+                        <a href="<?= BASE_URL ?>gudang" class="btn-secondary py-1.5 px-4 text-sm">Reset</a>
+                    <?php endif; ?>
+                </form>
+                <a href="<?= BASE_URL ?>gudang/export_stok<?= !empty($_GET['date']) ? '?date=' . urlencode($_GET['date']) : '' ?>" class="btn-secondary btn-sm !text-success border border-success/20 hover:!bg-success/10" target="_blank">
+                    <i class="ph-bold ph-file-csv text-base"></i> Export Excel Stok
+                </a>
+            </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <?php if (empty($warehouseStocks)): ?>
@@ -66,19 +91,20 @@
                 </div>
             <?php else: ?>
                 <?php foreach ($warehouseStocks as $w): ?>
-                    <div class="border border-slate-200 dark:border-gray-700 rounded-xl p-5 hover:border-primary dark:hover:border-primary transition-colors bg-white dark:bg-gray-800">
+                    <div class="border border-slate-200 dark:border-gray-700 rounded-xl p-5 hover:border-primary dark:hover:border-primary transition-all bg-white dark:bg-gray-800 shadow-sm hover:shadow-md flex flex-col justify-between">
                         <div class="mb-4">
                             <h4 class="font-bold text-lg text-slate-800 dark:text-gray-100"><?= htmlspecialchars($w['nama_barang']) ?></h4>
                             <p class="text-sm text-slate-500 dark:text-gray-400 mt-1"><?= htmlspecialchars($w['deskripsi'] ?: 'Tidak ada deskripsi') ?></p>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-success-bg/50 dark:bg-success-bg p-3 rounded-lg flex flex-col items-center">
-                                <span class="text-[10px] uppercase font-bold text-success/70 tracking-wider mb-1">Ready / Full</span>
-                                <span class="text-2xl font-black text-success"><?= $w['stok_ready'] ?></span>
+                        <div class="bg-indigo-50/60 dark:bg-indigo-900/20 border border-indigo-100/80 dark:border-indigo-800/40 p-4 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[11px] uppercase font-bold text-slate-500 dark:text-gray-400 tracking-wider">Total Stok Gudang</span>
+                                <div class="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5">
+                                    <?= $w['stok'] ?> <span class="text-xs font-semibold text-slate-500 dark:text-gray-400">tabung</span>
+                                </div>
                             </div>
-                            <div class="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg flex flex-col items-center">
-                                <span class="text-[10px] uppercase font-bold text-amber-500/70 tracking-wider mb-1">Kosong</span>
-                                <span class="text-2xl font-black text-amber-500"><?= $w['stok_kosong'] ?></span>
+                            <div class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-800/50 text-indigo-600 dark:text-indigo-300 flex items-center justify-center">
+                                <i class="ph-fill ph-cylinder text-2xl"></i>
                             </div>
                         </div>
                     </div>
@@ -87,11 +113,11 @@
         </div>
     </div>
 
-    <!-- Tab 2: Transaction History (Refills, Sales, Purchases) -->
+    <!-- Tab 2: Transaction History -->
     <div class="tab-content p-6 <?= (isset($_GET['tab']) && $_GET['tab'] == 'transactions') ? '' : 'hidden' ?>" id="tab-transactions">
         <div class="flex justify-between items-center mb-6">
             <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100">Riwayat Transaksi Gudang</h3>
-            <a href="index.php?controller=gudang&action=export_transaksi" class="btn-secondary btn-sm !text-success border border-success/20 hover:!bg-success/10" target="_blank">
+            <a href="<?= BASE_URL ?>gudang/export_transaksi" class="btn-secondary btn-sm !text-success border border-success/20 hover:!bg-success/10" target="_blank">
                 <i class="ph-bold ph-file-csv text-base"></i> Export Excel Riwayat
             </a>
         </div>
@@ -104,12 +130,13 @@
                         <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Jenis Transaksi</th>
                         <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Perubahan</th>
                         <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Keterangan</th>
+                        <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($transactions)): ?>
                         <tr>
-                            <td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada riwayat transaksi gudang.</td>
+                            <td colspan="6" class="px-5 py-8 text-center text-slate-500">Belum ada riwayat transaksi gudang.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($transactions as $t): ?>
@@ -119,17 +146,19 @@
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700">
                                     <?php
                                     if ($t['tipe_transaksi'] == 'pembelian' || $t['tipe_transaksi'] == 'beli_baru') {
-                                        echo '<span class="badge badge-success">Baru/Beli</span>';
+                                        echo '<span class="badge badge-success">Beli / Masuk</span>';
+                                    } elseif ($t['tipe_transaksi'] == 'penjualan' || $t['tipe_transaksi'] == 'jual_rusak' || $t['tipe_transaksi'] == 'rusak') {
+                                        echo '<span class="badge badge-danger">Pengurangan / Rusak</span>';
+                                    } elseif ($t['tipe_transaksi'] == 'koreksi') {
+                                        echo '<span class="badge badge-info">Koreksi Stok</span>';
                                     } elseif ($t['tipe_transaksi'] == 'refill') {
-                                        echo '<span class="badge badge-info">Refill / Isi Ulang</span>';
-                                    } elseif ($t['tipe_transaksi'] == 'penjualan' || $t['tipe_transaksi'] == 'jual_rusak') {
-                                        echo '<span class="badge badge-danger">Penjualan/Pemusnahan</span>';
+                                        echo '<span class="badge bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 border-none">Refill</span>';
                                     } else {
                                         echo '<span class="badge bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 border-none">' . htmlspecialchars($t['tipe_transaksi']) . '</span>';
                                     }
                                     ?>
                                 </td>
-                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700">
+                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-mono">
                                     <?php if ($t['jumlah'] > 0): ?>
                                         <span class="text-success font-bold">+<?= $t['jumlah'] ?></span>
                                     <?php else: ?>
@@ -137,6 +166,12 @@
                                     <?php endif; ?>
                                 </td>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($t['keterangan'] ?: '-') ?></td>
+                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="<?= BASE_URL ?>gudang/edit_transaksi?id=<?= $t['id'] ?>" class="btn-sm bg-indigo-50 text-primary hover:bg-indigo-100 transition-colors inline-block no-underline">Edit</a>
+                                        <a href="<?= BASE_URL ?>gudang/delete_transaksi?id=<?= $t['id'] ?>" class="btn-sm bg-red-50 text-danger hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirm('Hapus transaksi gudang ini?');">Hapus</a>
+                                    </div>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>
@@ -145,12 +180,47 @@
         </div>
         
         <?php if ($totalPages > 1): ?>
-            <div class="flex justify-center gap-2 mt-8">
-                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                    <a href="index.php?controller=gudang&action=index&tab=transactions&p=<?= $i ?>" class="btn-sm <?= $page == $i ? 'btn-primary' : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' ?>">
+            <div class="flex justify-center items-center gap-1 mt-8">
+                <!-- Prev -->
+                <?php if ($page > 1): ?>
+                    <a href="<?= BASE_URL ?>gudang/index?tab=transactions&p=<?= $page - 1 ?>" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <i class="ph-bold ph-caret-left"></i>
+                    </a>
+                <?php endif; ?>
+
+                <?php 
+                $startPage = max(1, $page - 2);
+                $endPage = min($totalPages, $page + 2);
+
+                if ($startPage > 1) {
+                    echo '<a href="' . BASE_URL . 'gudang/index?tab=transactions&p=1" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">1</a>';
+                    if ($startPage > 2) {
+                        echo '<span class="px-2 text-slate-400">...</span>';
+                    }
+                }
+
+                for ($i = $startPage; $i <= $endPage; $i++): 
+                ?>
+                    <a href="<?= BASE_URL ?>gudang/index?tab=transactions&p=<?= $i ?>" class="btn-sm <?= $page == $i ? 'btn-primary' : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' ?>">
                         <?= $i ?>
                     </a>
                 <?php endfor; ?>
+
+                <?php 
+                if ($endPage < $totalPages) {
+                    if ($endPage < $totalPages - 1) {
+                        echo '<span class="px-2 text-slate-400">...</span>';
+                    }
+                    echo '<a href="' . BASE_URL . 'gudang/index?tab=transactions&p=' . $totalPages . '" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">' . $totalPages . '</a>';
+                }
+                ?>
+
+                <!-- Next -->
+                <?php if ($page < $totalPages): ?>
+                    <a href="<?= BASE_URL ?>gudang/index?tab=transactions&p=<?= $page + 1 ?>" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <i class="ph-bold ph-caret-right"></i>
+                    </a>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
     </div>
@@ -178,8 +248,8 @@
                                     <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400"><?= htmlspecialchars($b['deskripsi'] ?: '-') ?></td>
                                     <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
                                         <div class="flex items-center justify-center gap-2">
-                                            <a href="index.php?controller=gudang&action=edit_cylinder&id=<?= $b['id'] ?>" class="btn-sm bg-indigo-50 text-primary dark:bg-indigo-500/20 hover:bg-indigo-100 transition-colors inline-block no-underline">Edit</a>
-                                            <a href="index.php?controller=gudang&action=delete_cylinder&id=<?= $b['id'] ?>" class="btn-sm bg-red-50 text-danger dark:bg-red-500/20 hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirmAction(event, 'Peringatan Ekstrem: Menghapus jenis tabung akan MENGHAPUS SEMUA transaksi, riwayat pengiriman, dan log stok terkait tabung ini! Lanjutkan?', this.href);">Hapus</a>
+                                            <a href="<?= BASE_URL ?>gudang/edit_cylinder/<?= $b['id'] ?>" class="btn-sm bg-indigo-50 text-primary dark:bg-indigo-500/20 hover:bg-indigo-100 transition-colors inline-block no-underline">Edit</a>
+                                            <a href="<?= BASE_URL ?>gudang/delete_cylinder/<?= $b['id'] ?>" class="btn-sm bg-red-50 text-danger dark:bg-red-500/20 hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirmAction(event, 'Peringatan Ekstrem: Menghapus jenis tabung akan MENGHAPUS SEMUA transaksi, riwayat pengiriman, dan log stok terkait tabung ini! Lanjutkan', this.href);">Hapus</a>
                                         </div>
                                     </td>
                                 </tr>
@@ -193,7 +263,7 @@
             <div class="lg:col-span-1">
                 <div class="bg-indigo-50/30 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/10 rounded-2xl p-6">
                     <h4 class="font-bold text-lg mb-6">Tambah Jenis Tabung Baru</h4>
-                    <form action="index.php?controller=gudang&action=create_cylinder" method="POST" class="space-y-4">
+                    <form action="<?= BASE_URL ?>gudang/create_cylinder" method="POST" class="space-y-4">
                         <div>
                             <label class="block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="nama_barang">Nama Tabung (Kode)</label>
                             <input type="text" id="nama_barang" name="nama_barang" class="form-control" placeholder="Contoh: OXY 6m3" required>

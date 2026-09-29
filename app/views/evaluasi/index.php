@@ -7,7 +7,7 @@
         <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Monitor relasi yang sudah lebih dari 30 hari tidak ada pergerakan transaksi</p>
     </div>
     <div>
-        <a href="index.php?controller=relasi&action=index" class="btn-secondary">Semua Relasi</a>
+        <a href="<?= BASE_URL ?>relasi" class="btn-secondary">Semua Relasi</a>
     </div>
 </div>
 
@@ -66,7 +66,7 @@
                                 <?php endif; ?>
                             </td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
-                                <a href="index.php?controller=relasi&action=detail&id=<?= $c['relasi_id'] ?>" class="btn-sm bg-danger text-white hover:bg-red-600 transition-colors inline-block no-underline">
+                                <a href="<?= BASE_URL ?>relasi/detail/<?= $c['relasi_id'] ?>" class="btn-sm bg-danger text-white hover:bg-red-600 transition-colors inline-block no-underline">
                                     Catat Evaluasi Klien
                                 </a>
                             </td>

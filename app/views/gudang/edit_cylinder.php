@@ -7,7 +7,7 @@
         <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Ubah nama atau deskripsi spesifikasi tabung</p>
     </div>
     <div>
-        <a href="index.php?controller=gudang&action=index&tab=cylinders" class="btn-secondary">Kembali</a>
+        <a href="<?= BASE_URL ?>gudang?tab=cylinders" class="btn-secondary">Kembali</a>
     </div>
 </div>
 
@@ -22,7 +22,7 @@
 <?php endif; ?>
 
 <div class="glass-panel p-6 rounded-2xl shadow-sm max-w-3xl">
-    <form action="index.php?controller=gudang&action=edit_cylinder&id=<?= $barang['id'] ?>" method="POST">
+    <form action="<?= BASE_URL ?>gudang/edit_cylinder/<?= $barang['id'] ?>" method="POST">
         
         <div class="form-group">
             <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="nama_barang">Nama Tabung (Kode Barang)</label>
@@ -35,7 +35,7 @@
         </div>
 
         <div class="flex justify-end gap-3 mt-8">
-            <a href="index.php?controller=gudang&action=index&tab=cylinders" class="btn-secondary">Batal</a>
+            <a href="<?= BASE_URL ?>gudang?tab=cylinders" class="btn-secondary">Batal</a>
             <button type="submit" class="btn-primary">Simpan Perubahan</button>
         </div>
     </form>

@@ -29,7 +29,7 @@ class BarangModel {
             $barang_id = $this->db->lastInsertId();
             
             // Initialize warehouse stock to 0
-            $stmt_stock = $this->db->prepare("INSERT INTO stok_gudang (barang_id, stok_ready, stok_kosong) VALUES (?, 0, 0)");
+            $stmt_stock = $this->db->prepare("INSERT INTO stok_gudang (barang_id, stok_ready, stok_kosong, stok) VALUES (?, 0, 0, 0)");
             $stmt_stock->execute([$barang_id]);
             
             $this->db->commit();

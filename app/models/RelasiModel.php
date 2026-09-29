@@ -24,8 +24,8 @@ class RelasiModel {
             $this->db->beginTransaction();
             
             // Validate and deduct from warehouse
-            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok_ready FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
-            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready - ? WHERE barang_id = ?");
+            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
+            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok = stok - ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_log = $this->db->prepare("INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) VALUES (CURDATE(), ?, 'koreksi', ?, ?)");
 
             foreach ($stok_awal_array as $barang_id => $stok_awal) {
@@ -33,8 +33,8 @@ class RelasiModel {
                 if ($stok > 0) {
                     $stmt_check->execute([$barang_id]);
                     $row = $stmt_check->fetch();
-                    if (!$row || $stok > $row['stok_ready']) {
-                        throw new Exception("Stok awal (" . $stok . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok_ready'] : 0) . ").");
+                    if (!$row || $stok > $row['stok']) {
+                        throw new Exception("Stok awal (" . $stok . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok'] : 0) . ").");
                     }
                     $stmt_update_gudang->execute([$stok, $barang_id]);
                     $stmt_log->execute([$barang_id, $stok, "Pinjaman stok awal untuk mitra baru: " . $nama_relasi]);
@@ -73,9 +73,9 @@ class RelasiModel {
                 $old_stocks[$row['barang_id']] = (int)$row['stok_awal'];
             }
 
-            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok_ready FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
-            $stmt_update_gudang_kurang = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready - ? WHERE barang_id = ?");
-            $stmt_update_gudang_tambah = $this->db->prepare("UPDATE stok_gudang SET stok_ready = stok_ready + ? WHERE barang_id = ?");
+            $stmt_check = $this->db->prepare("SELECT b.nama_barang, sg.stok FROM stok_gudang sg JOIN barang b ON sg.barang_id = b.id WHERE sg.barang_id = ?");
+            $stmt_update_gudang_kurang = $this->db->prepare("UPDATE stok_gudang SET stok = stok - ?, stok_ready = stok WHERE barang_id = ?");
+            $stmt_update_gudang_tambah = $this->db->prepare("UPDATE stok_gudang SET stok = stok + ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_log = $this->db->prepare("INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) VALUES (CURDATE(), ?, 'koreksi', ?, ?)");
 
             // Process differences and validate
@@ -87,8 +87,8 @@ class RelasiModel {
                 if ($diff > 0) { // Needs to take MORE from warehouse
                     $stmt_check->execute([$barang_id]);
                     $row = $stmt_check->fetch();
-                    if (!$row || $diff > $row['stok_ready']) {
-                        throw new Exception("Penambahan stok awal (" . $diff . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok_ready'] : 0) . ").");
+                    if (!$row || $diff > $row['stok']) {
+                        throw new Exception("Penambahan stok awal (" . $diff . ") untuk " . ($row ? $row['nama_barang'] : 'Barang ID '.$barang_id) . " melebihi ketersediaan di gudang (" . ($row ? $row['stok'] : 0) . ").");
                     }
                     $stmt_update_gudang_kurang->execute([$diff, $barang_id]);
                     $stmt_log->execute([$barang_id, $diff, "Penyesuaian tambah stok awal mitra: " . $nama_relasi]);
@@ -146,8 +146,8 @@ class RelasiModel {
             $stmt_stocks->execute([$id]);
             $stocks = $stmt_stocks->fetchAll();
 
-            // 3. Kembalikan tabung ke gudang (sebagai stok_kosong) dan catat log
-            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok_kosong = stok_kosong + ? WHERE barang_id = ?");
+            // 3. Kembalikan tabung ke gudang dan catat log
+            $stmt_update_gudang = $this->db->prepare("UPDATE stok_gudang SET stok = stok + ?, stok_ready = stok WHERE barang_id = ?");
             $stmt_log = $this->db->prepare("INSERT INTO gudang_transaksi (tanggal, barang_id, tipe_transaksi, jumlah, keterangan) VALUES (CURDATE(), ?, 'koreksi', ?, ?)");
 
             foreach ($stocks as $stock) {
@@ -188,7 +188,29 @@ class RelasiModel {
     /**
      * Get a cross product of all clients and cylinder types, detailing stocks.
      */
-    public function getAllWithStocks() {
+    public function countAllRelasi($search = '') {
+        $sql = "SELECT COUNT(*) FROM relasi";
+        $params = [];
+        if (!empty($search)) {
+            $sql .= " WHERE nama_relasi LIKE ?";
+            $params[] = '%' . $search . '%';
+        }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchColumn();
+    }
+
+    public function getAllWithStocks($limit = 30, $offset = 0, $search = '', $date = '') {
+        $whereClause = "";
+        if (!empty($search)) {
+            $whereClause = "WHERE nama_relasi LIKE :search";
+        }
+
+        $dateClause = "";
+        if (!empty($date)) {
+            $dateClause = " AND p.tanggal <= :date";
+        }
+
         $sql = "SELECT 
                     r.id as relasi_id,
                     r.nama_relasi,
@@ -199,14 +221,23 @@ class RelasiModel {
                     COALESCE(SUM(p.jumlah_masuk), 0) as total_masuk,
                     COALESCE(SUM(p.jumlah_keluar), 0) as total_keluar,
                     (COALESCE(sa.stok_awal, 0) + COALESCE(SUM(p.jumlah_masuk), 0) - COALESCE(SUM(p.jumlah_keluar), 0)) as stok_akhir
-                FROM relasi r
+                FROM (SELECT * FROM relasi $whereClause ORDER BY nama_relasi ASC LIMIT :limit OFFSET :offset) r
                 CROSS JOIN barang b
                 LEFT JOIN relasi_stok_awal sa ON sa.relasi_id = r.id AND sa.barang_id = b.id
-                LEFT JOIN pengiriman p ON p.relasi_id = r.id AND p.barang_id = b.id
+                LEFT JOIN pengiriman p ON p.relasi_id = r.id AND p.barang_id = b.id $dateClause
                 GROUP BY r.id, b.id
                 ORDER BY r.nama_relasi ASC, b.nama_barang ASC";
         
-        $stmt = $this->db->query($sql);
+        $stmt = $this->db->prepare($sql);
+        if (!empty($search)) {
+            $stmt->bindValue(':search', '%' . $search . '%', PDO::PARAM_STR);
+        }
+        if (!empty($date)) {
+            $stmt->bindValue(':date', $date, PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         $raw = $stmt->fetchAll();
         
         // Group by relasi_id for easy display
@@ -248,7 +279,11 @@ class RelasiModel {
                     END as hari_sejak_pengiriman,
                     MAX(ev.status_lanjut) as status_lanjut,
                     MAX(ev.catatan) as evaluasi_catatan,
-                    MAX(ev.tanggal) as evaluasi_tanggal
+                    MAX(ev.tanggal) as evaluasi_tanggal,
+                    (
+                        COALESCE((SELECT SUM(stok_awal) FROM relasi_stok_awal WHERE relasi_id = r.id), 0) +
+                        COALESCE(SUM(p.jumlah_masuk), 0) - COALESCE(SUM(p.jumlah_keluar), 0)
+                    ) as total_tabung_dipinjam
                 FROM relasi r
                 LEFT JOIN pengiriman p ON p.relasi_id = r.id
                 LEFT JOIN (
@@ -262,6 +297,7 @@ class RelasiModel {
                     ) e2 ON e1.relasi_id = e2.relasi_id AND e1.created_at = e2.max_created
                 ) ev ON ev.relasi_id = r.id
                 GROUP BY r.id
+                HAVING total_tabung_dipinjam > 0
                 ORDER BY hari_sejak_pengiriman DESC, r.nama_relasi ASC";
         
         $stmt = $this->db->query($sql);

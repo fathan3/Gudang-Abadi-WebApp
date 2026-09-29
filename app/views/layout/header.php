@@ -1,5 +1,7 @@
 <?php
-$activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboard';
+$urlParam = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '';
+$urlParts = explode('/', filter_var($urlParam, FILTER_SANITIZE_URL));
+$activeController = !empty($urlParts[0]) ? $urlParts[0] : 'dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -102,10 +104,18 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
                 @apply border-primary ring-4 ring-primary/10 border-slate-200 dark:border-gray-700;
             }
             .choices[data-type*="select-one"]::after {
-                @apply border-slate-400 dark:border-gray-500 mt-[-2.5px];
+                @apply mt-[-2.5px];
+                border-color: #94a3b8 transparent transparent transparent;
+            }
+            .dark .choices[data-type*="select-one"]::after {
+                border-color: #6b7280 transparent transparent transparent;
             }
             .choices[data-type*="select-one"].is-open::after {
-                @apply mt-[-2.5px] border-slate-400 dark:border-gray-500;
+                @apply mt-[-2.5px];
+                border-color: transparent transparent #94a3b8 transparent;
+            }
+            .dark .choices[data-type*="select-one"].is-open::after {
+                border-color: transparent transparent #6b7280 transparent;
             }
             .choices__list--dropdown, .choices__list[aria-expanded] {
                 @apply bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl mt-2 shadow-lg z-50 text-slate-900 dark:text-gray-100;
@@ -124,6 +134,26 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
             }
             .choices__list--single {
                 @apply p-0;
+            }
+            
+            /* Custom Auto-hiding Scrollbar */
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: transparent;
+                border-radius: 10px;
+                transition: background-color 0.3s ease;
+            }
+            .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+                background: rgba(148, 163, 184, 0.4);
+            }
+            .dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+                background: rgba(71, 85, 105, 0.6);
             }
         }
     </style>
@@ -144,15 +174,19 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
             <nav class="flex-grow">
                 <ul class="flex flex-col gap-2">
                     <?php 
+                    $userRole = $_SESSION['user_role'] ?? 'admin';
                     $menuItems = [
-                        ['id' => 'dashboard', 'label' => 'Dashboard', 'url' => 'index.php?controller=dashboard&action=index', 'icon' => 'ph-house'],
-                        ['id' => 'pengiriman', 'label' => 'Log Pengiriman', 'url' => 'index.php?controller=pengiriman&action=index', 'icon' => 'ph-truck'],
-                        ['id' => 'relasi', 'label' => 'Stok Relasi / Mitra', 'url' => 'index.php?controller=relasi&action=index', 'icon' => 'ph-users-three'],
-                        ['id' => 'gudang', 'label' => 'Stok Gudang', 'url' => 'index.php?controller=gudang&action=index', 'icon' => 'ph-warehouse'],
-                        ['id' => 'evaluasi', 'label' => 'Evaluasi Repurchase', 'url' => 'index.php?controller=evaluasi&action=index', 'icon' => 'ph-chart-bar']
+                        ['id' => 'dashboard', 'label' => 'Dashboard', 'url' => BASE_URL . 'dashboard', 'icon' => 'ph-house'],
+                        ['id' => 'pengiriman', 'label' => 'Log Pengiriman', 'url' => BASE_URL . 'pengiriman', 'icon' => 'ph-truck'],
+                        ['id' => 'relasi', 'label' => 'Stok Relasi / Mitra', 'url' => BASE_URL . 'relasi', 'icon' => 'ph-users-three'],
+                        ['id' => 'gudang', 'label' => 'Stok Gudang', 'url' => BASE_URL . 'gudang', 'icon' => 'ph-warehouse'],
+                        ['id' => 'evaluasi', 'label' => 'Evaluasi Repurchase', 'url' => BASE_URL . 'evaluasi', 'icon' => 'ph-chart-bar'],
+                        ['id' => 'audit', 'label' => 'Audit Log', 'url' => BASE_URL . 'audit', 'icon' => 'ph-clock-counter-clockwise', 'admin_only' => true],
+                        ['id' => 'settings', 'label' => 'Pengaturan', 'url' => BASE_URL . 'settings/lock_date', 'icon' => 'ph-lock', 'admin_only' => true]
                     ];
                     
                     foreach ($menuItems as $item):
+                        if (!empty($item['admin_only']) && $userRole !== 'admin') continue;
                         $isActive = $activeController === $item['id'];
                         $activeClasses = $isActive ? 'bg-primary text-white shadow-[0_4px_14px_rgba(79,70,229,0.3)]' : 'text-slate-500 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-primary dark:hover:text-primary';
                     ?>
@@ -175,7 +209,7 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
                         </div>
                         <div class="flex flex-col">
                             <span class="font-semibold text-sm text-slate-800 dark:text-gray-200"><?= isset($_SESSION['user_name']) ? htmlspecialchars($_SESSION['user_name']) : 'Admin' ?></span>
-                            <span class="text-xs text-slate-500 dark:text-gray-400">Sistem Gudang</span>
+                            <span class="text-xs text-slate-500 dark:text-gray-400"><?= ($userRole === 'stok_harian') ? 'Admin Stok Harian' : 'Admin Utama' ?></span>
                         </div>
                     </div>
                     <button class="p-2 rounded-full glass-panel text-slate-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-primary transition-all" id="themeToggleBtn" title="Ganti Tema">
@@ -185,7 +219,7 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
                         <i id="theme-icon-dark" class="ph-fill ph-moon text-xl block dark:hidden"></i>
                     </button>
                 </div>
-                <a href="index.php?controller=auth&action=logout" class="btn btn-secondary btn-sm w-full !text-danger hover:!bg-danger-bg">
+                <a href="<?= BASE_URL ?>auth/logout" class="btn btn-secondary btn-sm w-full !text-danger hover:!bg-danger-bg">
                     <i class="ph-bold ph-sign-out text-base"></i>
                     Keluar / Logout
                 </a>
@@ -212,7 +246,8 @@ $activeController = isset($_GET['controller']) ? $_GET['controller'] : 'dashboar
                     'success_create' => ['type' => 'success', 'text' => 'Data berhasil disimpan!'],
                     'success_update' => ['type' => 'success', 'text' => 'Data berhasil diperbarui!'],
                     'success_delete' => ['type' => 'info', 'text' => 'Data berhasil dihapus!'],
-                    'error_delete' => ['type' => 'danger', 'text' => 'Gagal menghapus data. Periksa ketergantungan relasi.']
+                    'error_delete' => ['type' => 'danger', 'text' => 'Gagal menghapus data. Periksa ketergantungan relasi.'],
+                    'access_denied' => ['type' => 'danger', 'text' => 'Akses ditolak: Akun Anda hanya diizinkan melakukan input stok harian.']
                 ];
                 
                 if (isset($msgConfig[$_GET['msg']])):

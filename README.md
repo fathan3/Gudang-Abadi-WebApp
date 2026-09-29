@@ -28,12 +28,6 @@ Aplikasi Web Manajemen Logistik Tabung Gas dengan desain modern *Glassmorphism*.
    Apabila Anda menggunakan konfigurasi password khusus pada MySQL lokal Anda (secara default biasanya kosong), Anda dapat menyesuaikannya melalui file konfigurasi:
    `app/config/Database.php`
 
-4. **Login Ke Aplikasi**
-   Buka URL aplikasi di browser Anda: `http://localhost/Gudang-Abadi-WebApp/`
-   Gunakan kredensial *default* berikut untuk masuk:
-   - **Username:** `admin`
-   - **Password:** `admin123`
-
 ## 📂 Struktur Direktori (Native MVC Pattern)
 
 Proyek ini dibangun menggunakan konsep **Model-View-Controller (MVC)** *native* sederhana tanpa *framework*.

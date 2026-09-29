@@ -26,14 +26,34 @@ spl_autoload_register(function ($class_name) {
 });
 
 // Routing
-$controllerParam = isset($_GET['controller']) ? $_GET['controller'] : 'dashboard';
-$actionParam = isset($_GET['action']) ? $_GET['action'] : 'index';
+$url = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '';
+$url = filter_var($url, FILTER_SANITIZE_URL);
+$urlParts = explode('/', $url);
+
+$controllerParam = !empty($urlParts[0]) ? $urlParts[0] : 'dashboard';
+$actionParam = !empty($urlParts[1]) ? $urlParts[1] : 'index';
+
+if (isset($urlParts[2]) && $urlParts[2] !== '') {
+    $_GET['id'] = $urlParts[2];
+}
 
 // Authentication Middleware
 // If user is not logged in and not trying to access the Auth controller, redirect to login
 if (!isset($_SESSION['user_id']) && strtolower($controllerParam) !== 'auth') {
-    header("Location: index.php?controller=auth&action=login");
+    header("Location: " . BASE_URL . "auth/login");
     exit;
+}
+
+// Role Authorization Middleware
+if (isset($_SESSION['user_id'])) {
+    $userRole = $_SESSION['user_role'] ?? 'admin';
+    if ($userRole === 'stok_harian') {
+        $restrictedControllers = ['audit', 'settings'];
+        if (in_array(strtolower($controllerParam), $restrictedControllers)) {
+            header("Location: " . BASE_URL . "dashboard?msg=access_denied");
+            exit;
+        }
+    }
 }
 
 // Format controller class name (e.g. "dashboard" -> "DashboardController")

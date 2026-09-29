@@ -6,9 +6,13 @@
         <h2 class="text-2xl font-bold tracking-tight">Profil Mitra &amp; Detail Saldo</h2>
         <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Lihat detail inventaris tabung, riwayat pengiriman, dan log tindakan evaluasi</p>
     </div>
-    <div class="flex items-center gap-2">
-        <a href="index.php?controller=relasi&action=index" class="btn-secondary">Kembali</a>
-        <a href="index.php?controller=relasi&action=edit&id=<?= $relasi['id'] ?>" class="btn-primary">
+    <div class="flex flex-wrap items-center gap-2">
+        <a href="<?= BASE_URL ?>relasi/export_detail?id=<?= $relasi['id'] ?>" class="btn-secondary !text-success border border-success/20 hover:!bg-success/10" target="_blank">
+            <i class="ph-bold ph-file-csv text-base"></i>
+            Export Excel
+        </a>
+        <a href="<?= BASE_URL ?>relasi" class="btn-secondary">Kembali</a>
+        <a href="<?= BASE_URL ?>relasi/edit/<?= $relasi['id'] ?>" class="btn-primary">
             <i class="ph-bold ph-pencil text-base"></i>
             Edit Profil
         </a>
@@ -49,7 +53,9 @@
                 <div class="flex justify-between items-center pt-2">
                     <span class="text-slate-500 dark:text-gray-400">Status Alert:</span>
                     <span>
-                        <?php if ($last_delivery['hari_sejak_pengiriman'] === null || $last_delivery['hari_sejak_pengiriman'] > 30): ?>
+                        <?php if ($total_tabung_dipinjam <= 0): ?>
+                            <span class="badge badge-success">Tidak Ada Pinjaman</span>
+                        <?php elseif ($last_delivery['hari_sejak_pengiriman'] === null || $last_delivery['hari_sejak_pengiriman'] > 30): ?>
                             <span class="badge badge-danger animate-[pulse_2s_infinite]">Peringatan Inaktif (>30 Hari)</span>
                         <?php else: ?>
                             <span class="badge badge-success">Mitra Aktif</span>
@@ -60,7 +66,7 @@
         </div>
 
         <!-- Evaluation Action Box -->
-        <?php if ($last_delivery['hari_sejak_pengiriman'] === null || $last_delivery['hari_sejak_pengiriman'] > 30): ?>
+        <?php if ($total_tabung_dipinjam > 0 && ($last_delivery['hari_sejak_pengiriman'] === null || $last_delivery['hari_sejak_pengiriman'] > 30)): ?>
             <div class="glass-panel p-6 rounded-2xl shadow-sm border border-danger/20 bg-danger/5 dark:bg-danger/10">
                 <h4 class="font-bold text-danger flex items-center gap-2 mb-2">
                     <i class="ph-fill ph-warning text-xl"></i>
@@ -69,7 +75,7 @@
                 <p class="text-xs text-danger/80 mb-4">
                     Klien sudah tidak memesan selama lebih dari 1 bulan. Catat status negosiasi atau keputusan lanjut/putus di sini.
                 </p>
-                <form action="index.php?controller=evaluasi&action=create" method="POST" class="space-y-4">
+                <form action="<?= BASE_URL ?>evaluasi/create" method="POST" class="space-y-4">
                     <input type="hidden" name="relasi_id" value="<?= $relasi['id'] ?>">
                     <input type="hidden" name="tanggal" value="<?= date('Y-m-d') ?>">
                     
@@ -127,11 +133,11 @@
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-warning font-medium">-<?= $keluar ?></td>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center font-bold text-base bg-indigo-50/30 dark:bg-indigo-900/5">
                                     <?php if ($akhir > 0): ?>
-                                        <span class="text-warning"><?= $akhir ?></span>
+                                        <span class="text-success"><?= $akhir ?></span>
                                     <?php elseif ($akhir < 0): ?>
-                                        <span class="text-danger"><?= $akhir ?></span>
+                                        <span class="text-warning"><?= $akhir ?></span>
                                     <?php else: ?>
-                                        <span class="text-slate-300 dark:text-slate-600">0</span>
+                                        <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -180,6 +186,52 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Pagination -->
+                <?php if (isset($totalPages) && $totalPages > 1): ?>
+                    <div class="flex justify-center items-center gap-1 mt-6">
+                        <!-- Prev -->
+                        <?php if ($page > 1): ?>
+                            <a href="<?= BASE_URL ?>relasi/detail/<?= $relasi['id'] ?>?p=<?= $page - 1 ?>" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                                <i class="ph-bold ph-caret-left"></i>
+                            </a>
+                        <?php endif; ?>
+
+                        <?php 
+                        $startPage = max(1, $page - 2);
+                        $endPage = min($totalPages, $page + 2);
+
+                        if ($startPage > 1) {
+                            echo '<a href="' . BASE_URL . 'relasi/detail/' . $relasi['id'] . '?p=1" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">1</a>';
+                            if ($startPage > 2) {
+                                echo '<span class="px-2 text-slate-400">...</span>';
+                            }
+                        }
+
+                        for ($i = $startPage; $i <= $endPage; $i++): 
+                        ?>
+                            <a href="<?= BASE_URL ?>relasi/detail/<?= $relasi['id'] ?>?p=<?= $i ?>" class="btn-sm <?= (isset($page) && $page == $i) ? 'btn-primary' : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' ?>">
+                                <?= $i ?>
+                            </a>
+                        <?php endfor; ?>
+
+                        <?php 
+                        if ($endPage < $totalPages) {
+                            if ($endPage < $totalPages - 1) {
+                                echo '<span class="px-2 text-slate-400">...</span>';
+                            }
+                            echo '<a href="' . BASE_URL . 'relasi/detail/' . $relasi['id'] . '?p=' . $totalPages . '" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">' . $totalPages . '</a>';
+                        }
+                        ?>
+
+                        <!-- Next -->
+                        <?php if ($page < $totalPages): ?>
+                            <a href="<?= BASE_URL ?>relasi/detail/<?= $relasi['id'] ?>?p=<?= $page + 1 ?>" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                                <i class="ph-bold ph-caret-right"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
             </div>
             
             <!-- Evaluations Tab -->

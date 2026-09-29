@@ -6,11 +6,19 @@
         <h2 class="text-2xl font-bold tracking-tight">Mitra &amp; Relasi Pelanggan</h2>
         <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Monitor stok tabung yang dipinjam oleh masing-masing mitra di setiap lokasi</p>
     </div>
-    <div>
-        <a href="index.php?controller=relasi&action=create" class="btn-primary">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+<?php
+$exportParams = [];
+if (!empty($_GET['search'])) $exportParams['search'] = $_GET['search'];
+if (!empty($_GET['date'])) $exportParams['date'] = $_GET['date'];
+$exportUrl = BASE_URL . 'relasi/export' . (!empty($exportParams) ? '?' . http_build_query($exportParams) : '');
+?>
+    <div class="flex items-center gap-3">
+        <a href="<?= $exportUrl ?>" class="btn-secondary !text-success border border-success/20 hover:!bg-success/10" target="_blank">
+            <i class="ph-bold ph-file-csv text-base"></i>
+            Export Excel
+        </a>
+        <a href="<?= BASE_URL ?>relasi/create" class="btn-primary">
+            <i class="ph-bold ph-plus text-base"></i>
             Tambah Mitra Baru
         </a>
     </div>
@@ -18,19 +26,34 @@
 
 <!-- Stock Matrix Table Card -->
 <div class="glass-panel p-6 rounded-2xl shadow-sm">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
         <div>
-            <h3 class="text-lg font-bold">Matriks Saldo Tabung Relasi</h3>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-gray-100">
+                <?= !empty($_GET['date']) ? 'Stok Relasi per Tanggal: ' . date('d-m-Y', strtotime($_GET['date'])) : 'Matriks Saldo Tabung Relasi' ?>
+            </h3>
             <div class="text-xs text-slate-500 dark:text-gray-400 italic mt-1">
-                *Angka menunjukkan jumlah tabung yang dipinjam (MP) di lokasi relasi
+                <?php if (!empty($_GET['date'])): ?>
+                    <span class="text-warning font-semibold">*Mode Histori: Menampilkan proyeksi saldo stok mitra pada akhir hari tersebut.</span>
+                <?php else: ?>
+                    *Angka menunjukkan jumlah tabung yang dipinjam (MP) di lokasi relasi
+                <?php endif; ?>
             </div>
         </div>
-        <div class="relative w-full sm:w-72">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="ph-bold ph-magnifying-glass text-slate-400 dark:text-slate-500"></i>
+        <form method="GET" action="<?= BASE_URL ?>relasi" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto" id="searchForm">
+            <div class="relative w-full sm:w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="ph-bold ph-magnifying-glass text-slate-400 dark:text-slate-500"></i>
+                </div>
+                <input type="text" name="search" id="searchMitra" value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : '' ?>" class="w-full pl-10 py-2 text-sm bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 focus:border-primary dark:focus:border-primary focus:outline-none ring-0 ring-transparent focus:ring-4 focus:ring-primary/10 dark:focus:ring-primary/20 rounded-xl text-slate-800 dark:text-gray-100 placeholder-slate-400 dark:placeholder-gray-500 transition-colors duration-200 shadow-sm" placeholder="Cari nama mitra...">
             </div>
-            <input type="text" id="searchMitra" class="w-full pl-10 py-2.5 text-sm bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-600 focus:border-primary dark:focus:border-primary focus:outline-none ring-0 ring-transparent focus:ring-4 focus:ring-primary/10 dark:focus:ring-primary/20 rounded-xl text-slate-800 dark:text-gray-100 placeholder-slate-400 dark:placeholder-gray-500 transition-colors duration-200 shadow-sm" placeholder="Cari nama mitra...">
-        </div>
+            <div class="flex items-center gap-2">
+                <input type="date" name="date" value="<?= htmlspecialchars($_GET['date'] ?? '') ?>" class="form-control py-2 text-sm w-[150px]" title="Pilih Tanggal Stok">
+                <button type="submit" class="btn-primary py-2 px-4 text-sm whitespace-nowrap">Cek Histori</button>
+                <?php if (!empty($_GET['date']) || !empty($_GET['search'])): ?>
+                    <a href="<?= BASE_URL ?>relasi" class="btn-secondary py-2 px-4 text-sm whitespace-nowrap">Reset</a>
+                <?php endif; ?>
+            </div>
+        </form>
     </div>
     <?php 
     $totals = [];
@@ -65,12 +88,12 @@
         <table class="w-full text-sm text-left whitespace-nowrap">
             <thead class="bg-slate-50/50 dark:bg-gray-800/50 text-slate-500">
                 <tr>
-                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Nama Relasi</th>
+                    <th class="static md:sticky left-0 z-20 bg-slate-50 dark:bg-gray-800 shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Nama Relasi</th>
                     <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Lokasi</th>
                     <?php foreach ($barangList as $b): ?>
                         <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center"><?= htmlspecialchars($b['nama_barang']) ?></th>
                     <?php endforeach; ?>
-                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Aksi</th>
+                    <th class="static md:sticky right-0 z-20 bg-slate-50 dark:bg-gray-800 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -82,8 +105,8 @@
                     </tr>
                 <?php else: ?>
                     <?php foreach ($clients as $c): ?>
-                        <tr class="mitra-row hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-colors">
-                            <td class="mitra-nama px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold text-slate-800 dark:text-gray-200"><?= htmlspecialchars($c['nama_relasi']) ?></td>
+                        <tr class="mitra-row group hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td class="mitra-nama static md:sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-slate-50 dark:group-hover:bg-[#1a2333] shadow-[4px_0_6px_-2px_rgba(0,0,0,0.05)] px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold text-slate-800 dark:text-gray-200"><?= htmlspecialchars($c['nama_relasi']) ?></td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($c['lokasi'] ?: '-') ?></td>
                             
                             <!-- Dynamic Cylinder Stock columns -->
@@ -100,25 +123,25 @@
                                 ?>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-base font-bold">
                                     <?php if ($stockVal > 0): ?>
-                                        <span class="text-warning"><?= $stockVal ?></span>
+                                        <span class="text-success"><?= $stockVal ?></span>
                                     <?php elseif ($stockVal < 0): ?>
-                                        <span class="text-danger"><?= $stockVal ?></span>
+                                        <span class="text-warning"><?= $stockVal ?></span>
                                     <?php else: ?>
-                                        <span class="text-slate-300 dark:text-slate-600">0</span>
+                                        <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
                                     <?php endif; ?>
                                 </td>
                             <?php endforeach; ?>
                             
                             <!-- Action Links -->
-                            <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
+                            <td class="static md:sticky right-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-slate-50 dark:group-hover:bg-[#1a2333] shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center">
                                 <div class="flex items-center justify-center gap-2">
-                                    <a href="index.php?controller=relasi&action=detail&id=<?= $c['id'] ?>" class="btn-sm bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-gray-600 transition-colors inline-block no-underline" title="Detail Profil &amp; History">
+                                    <a href="<?= BASE_URL ?>relasi/detail/<?= $c['id'] ?>" class="btn-sm bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-gray-600 transition-colors inline-block no-underline" title="Detail Profil &amp; History">
                                         Detail
                                     </a>
-                                    <a href="index.php?controller=relasi&action=edit&id=<?= $c['id'] ?>" class="btn-sm bg-indigo-50 text-primary dark:bg-indigo-500/20 hover:bg-indigo-100 transition-colors inline-block no-underline" title="Edit Mitra">
+                                    <a href="<?= BASE_URL ?>relasi/edit/<?= $c['id'] ?>" class="btn-sm bg-indigo-50 text-primary dark:bg-indigo-500/20 hover:bg-indigo-100 transition-colors inline-block no-underline" title="Edit Mitra">
                                         Edit
                                     </a>
-                                    <a href="index.php?controller=relasi&action=delete&id=<?= $c['id'] ?>" class="btn-sm bg-red-50 text-danger dark:bg-red-500/20 hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirm('Apakah Anda yakin ingin menghapus relasi <?= htmlspecialchars($c['nama_relasi']) ?>? Semua data transaksi dan stok terkait akan terhapus.');" title="Hapus">
+                                    <a href="<?= BASE_URL ?>relasi/delete/<?= $c['id'] ?>" class="btn-sm bg-red-50 text-danger dark:bg-red-500/20 hover:bg-red-100 transition-colors inline-block no-underline" onclick="return confirmAction(event, 'Apakah Anda yakin ingin menghapus relasi <?= htmlspecialchars($c['nama_relasi'], ENT_QUOTES) ?>? Semua data transaksi dan stok terkait akan terhapus.', this.href, 'Hapus Mitra');" title="Hapus">
                                         Hapus
                                     </a>
                                 </div>
@@ -129,27 +152,82 @@
             </tbody>
         </table>
     </div>
+    
+    <!-- Pagination -->
+    <?php if (isset($totalPages) && $totalPages > 1): ?>
+        <div class="flex justify-center items-center gap-1 mt-8">
+            <?php 
+            $queryParams = [];
+            if (!empty($_GET['search'])) $queryParams['search'] = $_GET['search'];
+            if (!empty($_GET['date'])) $queryParams['date'] = $_GET['date'];
+            $searchParam = !empty($queryParams) ? '&' . http_build_query($queryParams) : ''; 
+            ?>
+            
+            <!-- Prev -->
+            <?php if ($page > 1): ?>
+                <a href="<?= BASE_URL ?>relasi/index?p=<?= $page - 1 ?><?= $searchParam ?>" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                    <i class="ph-bold ph-caret-left"></i>
+                </a>
+            <?php endif; ?>
+
+            <?php 
+            $startPage = max(1, $page - 2);
+            $endPage = min($totalPages, $page + 2);
+
+            if ($startPage > 1) {
+                echo '<a href="' . BASE_URL . 'relasi/index?p=1' . $searchParam . '" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">1</a>';
+                if ($startPage > 2) {
+                    echo '<span class="px-2 text-slate-400">...</span>';
+                }
+            }
+
+            for ($i = $startPage; $i <= $endPage; $i++): 
+            ?>
+                <a href="<?= BASE_URL ?>relasi/index?p=<?= $i ?><?= $searchParam ?>" class="btn-sm <?= $page == $i ? 'btn-primary' : 'bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700' ?>">
+                    <?= $i ?>
+                </a>
+            <?php endfor; ?>
+
+            <?php 
+            if ($endPage < $totalPages) {
+                if ($endPage < $totalPages - 1) {
+                    echo '<span class="px-2 text-slate-400">...</span>';
+                }
+                echo '<a href="' . BASE_URL . 'relasi/index?p=' . $totalPages . $searchParam . '" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">' . $totalPages . '</a>';
+            }
+            ?>
+
+            <!-- Next -->
+            <?php if ($page < $totalPages): ?>
+                <a href="<?= BASE_URL ?>relasi/index?p=<?= $page + 1 ?><?= $searchParam ?>" class="btn-sm bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
+                    <i class="ph-bold ph-caret-right"></i>
+                </a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchMitra');
-    const tableRows = document.querySelectorAll('tr.mitra-row');
-    
+    const searchForm = document.getElementById('searchForm');
+    let timeout = null;
+
     if (searchInput) {
-        searchInput.addEventListener('keyup', function(e) {
-            const term = e.target.value.toLowerCase();
-            
-            tableRows.forEach(row => {
-                const nama = row.querySelector('.mitra-nama').textContent.toLowerCase();
-                
-                if (nama.includes(term)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+        // Auto-submit form when typing stops (debounce)
+        searchInput.addEventListener('input', function() {
+            clearTimeout(timeout);
+            timeout = setTimeout(function() {
+                searchForm.submit();
+            }, 500); // 500ms delay
         });
+
+        // Move cursor to end of input text after reload
+        if (searchInput.value) {
+            const length = searchInput.value.length;
+            searchInput.focus();
+            searchInput.setSelectionRange(length, length);
+        }
     }
 });
 </script>
