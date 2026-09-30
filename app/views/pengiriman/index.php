@@ -4,7 +4,7 @@
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
     <div>
         <h2 class="text-2xl font-bold tracking-tight">Catatan Pengiriman Harian</h2>
-        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Kelola pencatatan harian untuk pengiriman tabung isi ke klien dan pengembalian tabung kosong</p>
+        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Kelola pencatatan harian untuk pengiriman dan pengembalian tabung mitra</p>
     </div>
 <?php
 $filterQuery = '';
@@ -34,12 +34,12 @@ $exportUrl = BASE_URL . 'pengiriman/export' . ($filterQuery ? '?' . ltrim($filte
                 margin-bottom: 0;
             }
             .filter-wrapper .choices__inner {
-                min-height: 38px !important; /* Menyamakan tinggi dengan tombol dan input text py-1.5 */
+                min-height: 38px !important;
                 padding-top: 6px !important;
                 padding-bottom: 6px !important;
             }
             .filter-wrapper .choices[data-type*="select-one"]::after {
-                margin-top: -6px; /* Menyesuaikan posisi panah dropdown */
+                margin-top: -6px;
             }
         </style>
         
@@ -66,8 +66,8 @@ $exportUrl = BASE_URL . 'pengiriman/export' . ($filterQuery ? '?' . ltrim($filte
                     <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">No. SJ / Nota</th>
                     <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Nama Relasi</th>
                     <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Jenis Tabung</th>
-                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kirim (Isi)</th>
-                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kembali (Kosong)</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kirim</th>
+                    <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kembali</th>
                     <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Keterangan</th>
                     <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Aksi</th>
                 </tr>
@@ -88,20 +88,20 @@ $exportUrl = BASE_URL . 'pengiriman/export' . ($filterQuery ? '?' . ltrim($filte
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['nama_barang']) ?></td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold">
                                 <?php if ($d['jumlah_masuk'] > 0): ?>
-                                    <span class="text-success">+<?= $d['jumlah_masuk'] ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kirim']) ?>)</span>
+                                    <span class="text-success">+<?= $d['jumlah_masuk'] ?></span>
                                 <?php elseif ($d['jumlah_masuk'] < 0): ?>
-                                    <span class="text-warning"><?= $d['jumlah_masuk'] ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kirim']) ?>)</span>
+                                    <span class="text-warning"><?= $d['jumlah_masuk'] ?></span>
                                 <?php else: ?>
-                                    <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
+                                    <span class="text-slate-400 font-semibold">0</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold">
                                 <?php if ($d['jumlah_keluar'] > 0): ?>
-                                    <span class="text-warning">-<?= $d['jumlah_keluar'] ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kembali']) ?>)</span>
+                                    <span class="text-warning">-<?= $d['jumlah_keluar'] ?></span>
                                 <?php elseif ($d['jumlah_keluar'] < 0): ?>
-                                    <span class="text-success"><?= abs($d['jumlah_keluar']) ?></span> <span class="text-xs font-normal text-slate-500">(<?= htmlspecialchars($d['kondisi_kembali']) ?>)</span>
+                                    <span class="text-success">+<?= abs($d['jumlah_keluar']) ?></span>
                                 <?php else: ?>
-                                    <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
+                                    <span class="text-slate-400 font-semibold">0</span>
                                 <?php endif; ?>
                             </td>
                             <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['keterangan'] ?: '-') ?></td>

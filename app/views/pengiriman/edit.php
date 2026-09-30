@@ -61,24 +61,12 @@
 
             <div class="form-group md:col-span-1">
                 <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="jumlah_masuk">KIRIM / KELUAR</label>
-                <div class="flex gap-2">
-                    <input type="number" id="jumlah_masuk" name="jumlah_masuk" class="form-control border-success focus:border-success focus:ring-success/20 text-success font-bold" min="0" value="<?= $pengiriman['jumlah_masuk'] ?>" required>
-                    <select name="kondisi_kirim" class="form-control" style="width: 100px;">
-                        <option value="Isi" <?= $pengiriman['kondisi_kirim'] == 'Isi' ? 'selected' : '' ?>>Isi</option>
-                        <option value="Kosong" <?= $pengiriman['kondisi_kirim'] == 'Kosong' ? 'selected' : '' ?>>Kosong</option>
-                    </select>
-                </div>
+                <input type="number" id="jumlah_masuk" name="jumlah_masuk" class="form-control border-success focus:border-success focus:ring-success/20 text-success font-bold" min="0" value="<?= $pengiriman['jumlah_masuk'] ?>" required>
             </div>
 
             <div class="form-group md:col-span-1">
                 <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="jumlah_keluar">KEMBALI / MASUK</label>
-                <div class="flex gap-2">
-                    <input type="number" id="jumlah_keluar" name="jumlah_keluar" class="form-control border-warning focus:border-warning focus:ring-warning/20 text-warning font-bold" min="0" value="<?= $pengiriman['jumlah_keluar'] ?>" required>
-                    <select name="kondisi_kembali" class="form-control" style="width: 100px;">
-                        <option value="Kosong" <?= $pengiriman['kondisi_kembali'] == 'Kosong' ? 'selected' : '' ?>>Kosong</option>
-                        <option value="Isi" <?= $pengiriman['kondisi_kembali'] == 'Isi' ? 'selected' : '' ?>>Isi</option>
-                    </select>
-                </div>
+                <input type="number" id="jumlah_keluar" name="jumlah_keluar" class="form-control border-warning focus:border-warning focus:ring-warning/20 text-warning font-bold" min="0" value="<?= $pengiriman['jumlah_keluar'] ?>" required>
             </div>
         </div>
 
@@ -135,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const alertMessage = document.getElementById('minusAlertMessage');
 
     form.addEventListener('submit', function(e) {
-        if (isConfirmed) return; // Allow submit if already confirmed
+        if (isConfirmed) return;
 
         const relasiId = parseInt(document.getElementById('relasi_id').value);
         const barangId = parseInt(document.getElementById('barang_id').value);
@@ -148,20 +136,18 @@ document.addEventListener('DOMContentLoaded', function() {
             currentStock = stockMatrix[relasiId][barangId];
         }
         
-        // Sesuaikan currentStock untuk baseline edit
         if (relasiId === currentPengiriman.relasi_id && barangId === currentPengiriman.barang_id) {
             currentStock = currentStock - currentPengiriman.jumlah_masuk + currentPengiriman.jumlah_keluar;
         }
 
         if (jumlahKeluar > currentStock) {
-            e.preventDefault(); // Stop form
+            e.preventDefault();
             
             const barangName = barangData.find(b => b.id == barangId)?.nama_barang || 'Tabung';
             const minusAmt = currentStock - jumlahKeluar;
             
             alertMessage.innerHTML = `Pengembalian ini akan menyebabkan stok mitra menjadi minus:<br><br><b>${barangName}</b>: kembali ${jumlahKeluar}, sisa di mitra ${currentStock} (Hasil: <span class="text-danger font-bold">${minusAmt}</span>)`;
             
-            // Show modal
             modal.classList.remove('hidden');
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
