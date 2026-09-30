@@ -76,9 +76,16 @@ $exportUrl = BASE_URL . 'relasi/export' . (!empty($exportParams) ? '?' . http_bu
     <div class="flex flex-wrap items-center gap-3 mb-6 bg-indigo-50/50 dark:bg-indigo-500/10 px-5 py-3 rounded-xl border border-primary/20 shadow-sm">
         <span class="text-sm font-bold text-slate-700 dark:text-gray-300 mr-2">TOTAL TABUNG BEREDAR:</span>
         <?php foreach ($barangList as $b): ?>
+            <?php $bTotal = $totals[$b['id']]; ?>
             <div class="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:-translate-y-0.5 transition-transform">
                 <span class="text-xs font-semibold text-slate-500 dark:text-slate-400"><?= htmlspecialchars($b['nama_barang']) ?></span>
-                <span class="text-sm font-extrabold text-primary"><?= $totals[$b['id']] ?></span>
+                <?php if ($bTotal > 0): ?>
+                    <span class="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20 backdrop-blur-sm"><?= $bTotal ?></span>
+                <?php elseif ($bTotal < 0): ?>
+                    <span class="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold border border-rose-500/20 backdrop-blur-sm"><?= $bTotal ?></span>
+                <?php else: ?>
+                    <span class="text-xs font-bold text-slate-400 dark:text-slate-500">0</span>
+                <?php endif; ?>
             </div>
         <?php endforeach; ?>
     </div>
@@ -121,13 +128,13 @@ $exportUrl = BASE_URL . 'relasi/export' . (!empty($exportParams) ? '?' . http_bu
                                     }
                                 }
                                 ?>
-                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-base font-bold">
+                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-sm font-bold">
                                     <?php if ($stockVal > 0): ?>
-                                        <span class="text-success"><?= $stockVal ?></span>
+                                        <span class="inline-flex items-center justify-center min-w-[34px] h-8 px-2.5 rounded-full bg-emerald-500/10 dark:bg-emerald-400/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20 backdrop-blur-sm shadow-xs"><?= $stockVal ?></span>
                                     <?php elseif ($stockVal < 0): ?>
-                                        <span class="text-warning"><?= $stockVal ?></span>
+                                        <span class="inline-flex items-center justify-center min-w-[34px] h-8 px-2.5 rounded-full bg-rose-500/10 dark:bg-rose-400/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/20 backdrop-blur-sm shadow-xs"><?= $stockVal ?></span>
                                     <?php else: ?>
-                                        <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
+                                        <span class="text-slate-400 dark:text-gray-500 font-medium">0</span>
                                     <?php endif; ?>
                                 </td>
                             <?php endforeach; ?>

@@ -4,7 +4,7 @@
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
     <div>
         <h2 class="text-2xl font-bold tracking-tight">Catat Pengiriman Harian</h2>
-        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Input pengiriman tabung isi baru dan penerimaan tabung kosong kembali dari mitra</p>
+        <p class="text-slate-500 dark:text-gray-400 text-sm mt-1">Input pengiriman tabung ke mitra dan penerimaan tabung kembali dari mitra</p>
     </div>
     <div>
         <a href="<?= BASE_URL ?>pengiriman" class="btn-secondary">Kembali</a>
@@ -59,24 +59,12 @@
                 
                 <div class="form-group md:col-span-1">
                     <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">KIRIM / KELUAR</label>
-                    <div class="flex gap-2">
-                        <input type="number" name="jumlah_masuk[]" class="form-control border-success focus:border-success focus:ring-success/20 text-success font-bold" min="0" value="0" required>
-                        <select name="kondisi_kirim[]" class="form-control" style="width: 100px;">
-                            <option value="Isi" selected>Isi</option>
-                            <option value="Kosong">Kosong</option>
-                        </select>
-                    </div>
+                    <input type="number" name="jumlah_masuk[]" class="form-control border-success focus:border-success focus:ring-success/20 text-success font-bold" min="0" value="0" required placeholder="0">
                 </div>
                 
                 <div class="form-group md:col-span-1">
                     <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2">KEMBALI / MASUK</label>
-                    <div class="flex gap-2">
-                        <input type="number" name="jumlah_keluar[]" class="form-control border-warning focus:border-warning focus:ring-warning/20 text-warning font-bold" min="0" value="0" required>
-                        <select name="kondisi_kembali[]" class="form-control" style="width: 100px;">
-                            <option value="Kosong" selected>Kosong</option>
-                            <option value="Isi">Isi</option>
-                        </select>
-                    </div>
+                    <input type="number" name="jumlah_keluar[]" class="form-control border-warning focus:border-warning focus:ring-warning/20 text-warning font-bold" min="0" value="0" required placeholder="0">
                 </div>
 
                 <div class="form-group md:col-span-1 flex items-center h-full pb-1">
@@ -95,7 +83,7 @@
 
         <div class="form-group mt-6">
             <label class="form-label block text-sm font-semibold text-slate-700 dark:text-gray-300 mb-2" for="keterangan">Keterangan / Catatan Tambahan</label>
-            <input type="text" id="keterangan" name="keterangan" class="form-control" placeholder="Contoh: Refill CO2 5KG, tabung dipinjam, dll.">
+            <input type="text" id="keterangan" name="keterangan" class="form-control" placeholder="Contoh: Pengiriman rutin, tabung dipinjam, dll.">
         </div>
 
         <div class="flex justify-end gap-3 mt-8">
@@ -149,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (isConfirmed) {
             form.dataset.submitting = 'true';
-            return; // Allow submit if already confirmed
+            return;
         }
 
         const relasiId = document.getElementById('relasi_id').value;
@@ -162,7 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
         itemRows.forEach(row => {
             const barangId = row.querySelector('select[name="barang_id[]"]').value;
             const jumlahKeluar = parseInt(row.querySelector('input[name="jumlah_keluar[]"]').value) || 0;
-            const kondisiKembali = row.querySelector('select[name="kondisi_kembali[]"]').value;
             
             if (barangId && jumlahKeluar > 0) {
                 if (!totals[barangId]) totals[barangId] = 0;
@@ -183,24 +170,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (qty > currentStock) {
                 hasMinus = true;
                 const barangName = barangData.find(b => b.id == barangId)?.nama_barang || 'Tabung';
-                const minusAmt = currentStock - qty; // Akan negatif
+                const minusAmt = currentStock - qty;
                 minusWarnings.push(`<b>${barangName}</b>: kembali ${qty}, sisa di mitra ${currentStock} (Hasil: <span class="text-danger font-bold">${minusAmt}</span>)`);
             }
         }
 
         if (hasMinus) {
-            e.preventDefault(); // Stop form from submitting
+            e.preventDefault();
             alertMessage.innerHTML = "Pengembalian ini akan menyebabkan stok mitra menjadi minus:<br><br>" + minusWarnings.join('<br>');
             
-            // Show modal
             modal.classList.remove('hidden');
-            // Small delay to allow CSS transition
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 modal.querySelector('div').classList.remove('scale-95');
             }, 10);
         } else {
-            // Normal submit, no minus
             form.dataset.submitting = 'true';
             const submitBtn = form.querySelector('button[type="submit"]');
             if (submitBtn) {
@@ -232,11 +216,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     btnAddItem.addEventListener('click', function() {
-        // Clone the first row
         const firstRow = itemsContainer.querySelector('.item-row');
         const newRow = firstRow.cloneNode(true);
 
-        // Reset values in the new row
         const inputs = newRow.querySelectorAll('input');
         inputs.forEach(input => {
             if(input.type === 'number') {
@@ -248,31 +230,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const selects = newRow.querySelectorAll('select');
         selects.forEach(select => {
-            if (select.name === 'kondisi_kirim[]') {
-                select.value = 'Isi';
-            } else if (select.name === 'kondisi_kembali[]') {
-                select.value = 'Kosong';
-            } else {
-                select.selectedIndex = 0;
-            }
+            select.selectedIndex = 0;
         });
 
-        // Show the remove button on the new row
         const removeBtn = newRow.querySelector('.btn-remove-item');
         if(removeBtn) {
             removeBtn.classList.remove('hidden');
         }
 
-        // Add event listener to the new remove button
         removeBtn.addEventListener('click', function() {
             newRow.remove();
         });
 
-        // Append to container
         itemsContainer.appendChild(newRow);
     });
-
-    // Event delegation for the initial row's remove button (though it's hidden by default)
-    // We don't really need it for the first row if we want to force at least one item
 });
 </script>

@@ -73,7 +73,7 @@ class PengirimanController {
         
         // Header Row with Color
         echo '<tr>';
-        $headers = ['Tanggal', 'No. Surat Jalan', 'Nama Relasi', 'Jenis Tabung', 'Kirim (Isi)', 'Kembali (Kosong)', 'Keterangan'];
+        $headers = ['Tanggal', 'No. Surat Jalan', 'Nama Relasi', 'Jenis Tabung', 'Kirim', 'Kembali', 'Keterangan'];
         foreach ($headers as $head) {
             echo '<th style="background-color: #4f46e5; color: #ffffff; font-weight: bold; text-align: center;">' . $head . '</th>';
         }
@@ -87,8 +87,8 @@ class PengirimanController {
             echo '<td>' . htmlspecialchars($d['no_surat_jalan'] ?? '') . '</td>';
             echo '<td>' . htmlspecialchars($d['nama_relasi']) . '</td>';
             echo '<td>' . htmlspecialchars($d['nama_barang']) . '</td>';
-            echo '<td style="text-align: right;">' . $d['jumlah_masuk'] . ' (' . htmlspecialchars($d['kondisi_kirim']) . ')</td>';
-            echo '<td style="text-align: right;">' . $d['jumlah_keluar'] . ' (' . htmlspecialchars($d['kondisi_kembali']) . ')</td>';
+            echo '<td style="text-align: right;">' . $d['jumlah_masuk'] . '</td>';
+            echo '<td style="text-align: right;">' . $d['jumlah_keluar'] . '</td>';
             echo '<td>' . htmlspecialchars($d['keterangan']) . '</td>';
             echo '</tr>';
         }
@@ -109,13 +109,11 @@ class PengirimanController {
             $tanggal = $_POST['tanggal'];
             $no_surat_jalan = trim($_POST['no_surat_jalan'] ?? '');
             $relasi_id = (int)$_POST['relasi_id'];
-            $keterangan = trim($_POST['keterangan']);
+            $keterangan = trim($_POST['keterangan'] ?? '');
             
             $barang_ids = $_POST['barang_id'] ?? [];
             $jumlah_masuks = $_POST['jumlah_masuk'] ?? [];
-            $kondisi_kirims = $_POST['kondisi_kirim'] ?? [];
             $jumlah_keluars = $_POST['jumlah_keluar'] ?? [];
-            $kondisi_kembalis = $_POST['kondisi_kembali'] ?? [];
 
             require_once __DIR__ . '/../models/SettingsModel.php';
             $settingsModel = new SettingsModel();
@@ -138,30 +136,25 @@ class PengirimanController {
             for ($i = 0; $i < count($barang_ids); $i++) {
                 $b_id = (int)$barang_ids[$i];
                 $j_m = (int)($jumlah_masuks[$i] ?? 0);
-                $k_kirim = trim($kondisi_kirims[$i] ?? 'Isi');
                 $j_k = (int)($jumlah_keluars[$i] ?? 0);
-                $k_kembali = trim($kondisi_kembalis[$i] ?? 'Kosong');
                 
                 if ($b_id <= 0 || ($j_m == 0 && $j_k == 0)) continue;
 
                 if (!isset($totals[$b_id])) {
                     $totals[$b_id] = [
-                        'masuk_isi' => 0, 'masuk_kosong' => 0,
-                        'keluar_isi' => 0, 'keluar_kosong' => 0
+                        'masuk' => 0,
+                        'keluar' => 0
                     ];
                 }
-                if ($k_kirim == 'Isi') $totals[$b_id]['masuk_isi'] += $j_m;
-                elseif ($k_kirim == 'Kosong') $totals[$b_id]['masuk_kosong'] += $j_m;
-                
-                if ($k_kembali == 'Kosong') $totals[$b_id]['keluar_kosong'] += $j_k;
-                elseif ($k_kembali == 'Isi') $totals[$b_id]['keluar_isi'] += $j_k;
+                $totals[$b_id]['masuk'] += $j_m;
+                $totals[$b_id]['keluar'] += $j_k;
                 
                 $valid_items[] = [
                     'barang_id' => $b_id,
                     'jumlah_masuk' => $j_m,
-                    'kondisi_kirim' => $k_kirim,
+                    'kondisi_kirim' => 'Isi',
                     'jumlah_keluar' => $j_k,
-                    'kondisi_kembali' => $k_kembali
+                    'kondisi_kembali' => 'Kosong'
                 ];
             }
 
@@ -172,7 +165,7 @@ class PengirimanController {
             // 2. Validate all totals
             if (!isset($error)) {
                 foreach ($totals as $b_id => $qty) {
-                    $total_masuk = $qty['masuk_isi'] + $qty['masuk_kosong'];
+                    $total_masuk = $qty['masuk'];
                     if ($total_masuk > 0) {
                         $stmt_gudang = $db->prepare("SELECT stok FROM stok_gudang WHERE barang_id = ?");
                         $stmt_gudang->execute([$b_id]);
@@ -265,10 +258,10 @@ class PengirimanController {
             $relasi_id = (int)$_POST['relasi_id'];
             $barang_id = (int)$_POST['barang_id'];
             $jumlah_masuk = (int)$_POST['jumlah_masuk'];
-            $kondisi_kirim = trim($_POST['kondisi_kirim'] ?? 'Isi');
+            $kondisi_kirim = 'Isi';
             $jumlah_keluar = (int)$_POST['jumlah_keluar'];
-            $kondisi_kembali = trim($_POST['kondisi_kembali'] ?? 'Kosong');
-            $keterangan = trim($_POST['keterangan']);
+            $kondisi_kembali = 'Kosong';
+            $keterangan = trim($_POST['keterangan'] ?? '');
 
             require_once __DIR__ . '/../models/SettingsModel.php';
             $settingsModel = new SettingsModel();

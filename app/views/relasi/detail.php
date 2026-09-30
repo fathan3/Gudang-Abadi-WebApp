@@ -113,8 +113,8 @@
                         <tr>
                             <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Jenis Tabung</th>
                             <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Stok Awal</th>
-                            <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Kirim (Isi)</th>
-                            <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Kembali (Kosong)</th>
+                            <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Kirim</th>
+                            <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center">Kembali</th>
                             <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700 text-center bg-indigo-50/50 dark:bg-indigo-900/10">Stok Akhir</th>
                         </tr>
                     </thead>
@@ -131,13 +131,13 @@
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-slate-500 dark:text-gray-400"><?= $init ?></td>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-success font-medium">+<?= $masuk ?></td>
                                 <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center text-warning font-medium">-<?= $keluar ?></td>
-                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center font-bold text-base bg-indigo-50/30 dark:bg-indigo-900/5">
+                                <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-center font-bold text-sm bg-indigo-50/30 dark:bg-indigo-900/5">
                                     <?php if ($akhir > 0): ?>
-                                        <span class="text-success"><?= $akhir ?></span>
+                                        <span class="inline-flex items-center justify-center min-w-[34px] h-8 px-2.5 rounded-full bg-emerald-500/10 dark:bg-emerald-400/15 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-500/20 backdrop-blur-sm shadow-xs"><?= $akhir ?></span>
                                     <?php elseif ($akhir < 0): ?>
-                                        <span class="text-warning"><?= $akhir ?></span>
+                                        <span class="inline-flex items-center justify-center min-w-[34px] h-8 px-2.5 rounded-full bg-rose-500/10 dark:bg-rose-400/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/20 backdrop-blur-sm shadow-xs"><?= $akhir ?></span>
                                     <?php else: ?>
-                                        <span class="text-red-500/50 dark:text-red-400/50 font-semibold">0</span>
+                                        <span class="text-slate-400 dark:text-gray-500 font-medium">0</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -162,8 +162,8 @@
                             <tr>
                                 <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Tanggal</th>
                                 <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Barang</th>
-                                <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kirim (Isi)</th>
-                                <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kembali (Kosong)</th>
+                                <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kirim</th>
+                                <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kembali</th>
                                 <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Keterangan</th>
                             </tr>
                         </thead>

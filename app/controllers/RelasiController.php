@@ -334,8 +334,8 @@ class RelasiController {
         echo '<tr>';
         echo '<th style="background-color: #6366f1; color: #ffffff;">Jenis Tabung</th>';
         echo '<th style="background-color: #6366f1; color: #ffffff;">Stok Awal</th>';
-        echo '<th style="background-color: #6366f1; color: #ffffff;">Kirim (Isi)</th>';
-        echo '<th style="background-color: #6366f1; color: #ffffff;">Kembali (Kosong)</th>';
+        echo '<th style="background-color: #6366f1; color: #ffffff;">Kirim</th>';
+        echo '<th style="background-color: #6366f1; color: #ffffff;">Kembali</th>';
         echo '<th style="background-color: #4f46e5; color: #ffffff;">Stok Akhir</th>';
         echo '</tr>';
 
@@ -361,8 +361,8 @@ class RelasiController {
         echo '<tr>';
         echo '<th style="background-color: #818cf8; color: #ffffff;">Tanggal</th>';
         echo '<th style="background-color: #818cf8; color: #ffffff;">Barang</th>';
-        echo '<th style="background-color: #818cf8; color: #ffffff;">Kirim (Isi)</th>';
-        echo '<th style="background-color: #818cf8; color: #ffffff;">Kembali (Kosong)</th>';
+        echo '<th style="background-color: #818cf8; color: #ffffff;">Kirim</th>';
+        echo '<th style="background-color: #818cf8; color: #ffffff;">Kembali</th>';
         echo '<th style="background-color: #818cf8; color: #ffffff;">Keterangan</th>';
         echo '</tr>';
 
