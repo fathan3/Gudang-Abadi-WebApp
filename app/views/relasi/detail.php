@@ -164,21 +164,32 @@
                                 <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Barang</th>
                                 <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kirim</th>
                                 <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Kembali</th>
+                                <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Total</th>
                                 <th class="px-5 py-4 font-semibold border-b border-slate-200 dark:border-gray-700">Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($deliveries)): ?>
                                 <tr>
-                                    <td colspan="5" class="px-5 py-8 text-center text-slate-500">Belum ada riwayat pengiriman untuk mitra ini.</td>
+                                    <td colspan="6" class="px-5 py-8 text-center text-slate-500">Belum ada riwayat pengiriman untuk mitra ini.</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($deliveries as $d): ?>
+                                    <?php $netTotal = (int)$d['jumlah_masuk'] - (int)$d['jumlah_keluar']; ?>
                                     <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-500/5 transition-colors">
                                         <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= date('d-m-Y', strtotime($d['tanggal'])) ?></td>
                                         <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['nama_barang']) ?></td>
                                         <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-success font-bold">+<?= $d['jumlah_masuk'] ?></td>
                                         <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-warning font-bold">-<?= $d['jumlah_keluar'] ?></td>
+                                        <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 font-bold">
+                                            <?php if ($netTotal > 0): ?>
+                                                <span class="text-success font-bold">+<?= $netTotal ?></span>
+                                            <?php elseif ($netTotal < 0): ?>
+                                                <span class="text-danger font-bold"><?= $netTotal ?></span>
+                                            <?php else: ?>
+                                                <span class="text-slate-400 dark:text-gray-400 font-semibold">0</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td class="px-5 py-4 border-b border-slate-200 dark:border-gray-700 text-slate-800 dark:text-gray-200"><?= htmlspecialchars($d['keterangan'] ?: '-') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
