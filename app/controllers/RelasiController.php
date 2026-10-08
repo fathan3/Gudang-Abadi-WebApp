@@ -363,18 +363,21 @@ class RelasiController {
         echo '<th style="background-color: #818cf8; color: #ffffff;">Barang</th>';
         echo '<th style="background-color: #818cf8; color: #ffffff;">Kirim</th>';
         echo '<th style="background-color: #818cf8; color: #ffffff;">Kembali</th>';
+        echo '<th style="background-color: #818cf8; color: #ffffff;">Total</th>';
         echo '<th style="background-color: #818cf8; color: #ffffff;">Keterangan</th>';
         echo '</tr>';
 
         if (empty($deliveries)) {
-            echo '<tr><td colspan="5" style="text-align: center;">Belum ada riwayat pengiriman.</td></tr>';
+            echo '<tr><td colspan="6" style="text-align: center;">Belum ada riwayat pengiriman.</td></tr>';
         } else {
             foreach ($deliveries as $d) {
+                $net = (int)$d['jumlah_masuk'] - (int)$d['jumlah_keluar'];
                 echo '<tr>';
                 echo '<td>' . date('d-m-Y', strtotime($d['tanggal'])) . '</td>';
                 echo '<td>' . htmlspecialchars($d['nama_barang']) . '</td>';
                 echo '<td style="text-align: right; color: green;">' . ($d['jumlah_masuk'] > 0 ? '+' . $d['jumlah_masuk'] : '0') . '</td>';
                 echo '<td style="text-align: right; color: orange;">' . ($d['jumlah_keluar'] > 0 ? '-' . $d['jumlah_keluar'] : '0') . '</td>';
+                echo '<td style="text-align: right; font-weight: bold;">' . ($net > 0 ? '+' . $net : $net) . '</td>';
                 echo '<td>' . htmlspecialchars($d['keterangan']) . '</td>';
                 echo '</tr>';
             }
